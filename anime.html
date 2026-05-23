@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="google-site-verification" content="m7lpll8JOHBCtpgPFkMKTKaZOUJwMy2SaVj5m2I4LD8" />
+    <title>animeKita - Streaming Anime</title>
+    <meta name="description" content="AnimeKita adalah tempat nonton streaming anime subtitle Indonesia gratis. Tersedia anime terbaru, ongoing, movie, dan classic. Update setiap hari!">
+    <meta name="keywords" content="anime, streaming anime, anime sub indo, nonton anime gratis, anime terbaru, anime movie, anime ongoing, download anime, animekita, nime">
+    <meta name="author" content="AnimeKita">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#3b82f6">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nime.tiyan.biz.id/">
+    <meta property="og:title" content="AnimeKita - Streaming Anime Sub Indo Gratis">
+    <meta property="og:description" content="Nonton anime subtitle Indonesia gratis. Update terbaru setiap hari!">
+    <meta property="og:image" content="https://cloud.tiyan.biz.id/nD6z.jpg">
+    <meta property="og:image:secure_url" content="https://cloud.tiyan.biz.id/nD6z.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AnimeKita - Streaming Anime Sub Indo Gratis">
+    <meta name="twitter:description" content="Nonton anime subtitle Indonesia gratis. Update terbaru setiap hari!">
+    <meta name="twitter:image" content="https://cloud.tiyan.biz.id/nD6z.jpg">
+    <link rel="canonical" href="https://nime.tiyan.biz.id/">
+    <link rel="icon" type="image/x-icon" href="https://cloud.tiyan.biz.id/nD6z.jpg">
+    <link rel="apple-touch-icon" href="https://cloud.tiyan.biz.id/nD6z.jpg">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    
+  <link rel="stylesheet" href="a.css">
+</head>
+<body>
+
+<div class="overlay fixed inset-0 bg-black/70 z-[250] opacity-0 invisible transition-all duration-300" id="overlay" onclick="closePlayer(); closeProfile(); if(document.getElementById('sidebar').classList.contains('translate-x-0')) toggleSidebar()"></div>
+
+<!-- Scroll to Top (kanan bawah) dengan icon keren -->
+<button id="scroll-top" class="fixed right-6 bottom-24 z-[90] bg-gradient-to-br from-blue-500 to-blue-700 text-white p-4 rounded-2xl shadow-2xl shadow-blue-500/50 opacity-0 invisible translate-y-10 transition-all duration-300 hover:from-blue-600 hover:to-blue-800 active:scale-95 glow-effect" onclick="scrollToTop()">
+    <i data-lucide="chevrons-up" class="w-6 h-6"></i>
+</button>
+
+<!-- Tombol Profil (kiri bawah) dengan icon keren -->
+<button id="profile-btn" class="fixed left-6 bottom-24 z-[90] bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-4 rounded-2xl shadow-2xl shadow-blue-500/50 border border-blue-400/30 hover:scale-105 hover:shadow-blue-500/70 transition-all duration-300 group" onclick="openProfile()" aria-label="Profil">
+    <i data-lucide="crown" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
+</button>
+
+<header class="header sticky top-0 z-[100] glass px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="p-1 -ml-1 rounded-lg hover:bg-blue-500/20 transition-all"><i data-lucide="sparkles" class="w-6 h-6 text-blue-400"></i></button>
+        <div class="flex items-center gap-2 cursor-pointer group" onclick="switchPage('home')">
+            <i data-lucide="flame" class="w-7 h-7 text-blue-500 group-hover:rotate-12 transition-transform duration-300 animated-icon"></i>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent group-hover:scale-105 transition-transform">AnimeKita - MYWIBU</h1>
+        </div>
+    </div>
+    <button onclick="switchPage('search')" class="p-2 rounded-full hover:bg-blue-500/20 transition-all group">
+        <i data-lucide="search" class="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform"></i>
+    </button>
+</header>
+
+<aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-72 z-[400] glass -translate-x-full transition-transform duration-300 ease-out flex flex-col border-r border-blue-500/20">
+    <div class="p-6 border-b border-blue-500/20 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="gem" class="w-6 h-6 text-blue-500"></i>
+            <span class="font-bold text-lg bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">Menu</span>
+        </div>
+        <button onclick="toggleSidebar()" class="p-2 rounded-full hover:bg-blue-500/20 transition-all">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+    </div>
+    <div class="flex-1 overflow-y-auto py-4">
+        <nav class="px-4 space-y-2">
+            <button onclick="switchPage('home'); toggleSidebar()" class="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-blue-500/10 hover:text-blue-400 transition-all group">
+                <i data-lucide="home" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium">Home</span>
+            </button>
+            <button onclick="switchPage('schedule'); toggleSidebar()" class="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-blue-500/10 hover:text-blue-400 transition-all group">
+                <i data-lucide="calendar" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium">Jadwal Update</span>
+            </button>
+            <button onclick="switchPage('movies'); toggleSidebar()" class="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-blue-500/10 hover:text-blue-400 transition-all group">
+                <i data-lucide="clapperboard" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium">Anime Movie</span>
+            </button>
+            <button onclick="switchPage('browse'); toggleSidebar()" class="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-blue-500/10 hover:text-blue-400 transition-all group">
+                <i data-lucide="compass" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium">Browse A-Z</span>
+            </button>
+            <button onclick="switchPage('genres'); toggleSidebar()" class="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-blue-500/10 hover:text-blue-400 transition-all group">
+                <i data-lucide="layers" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium">Genre List</span>
+            </button>
+        </nav>
+    </div>
+    <div class="p-6 border-t border-blue-500/20 text-xs text-center">
+        <span class="text-blue-400">© 2026 AnimeKita - MYWIBU</span>
+    </div>
+</aside>
+
+<nav class="fixed bottom-0 left-0 right-0 z-[100] glass px-2 py-3 flex justify-around items-center rounded-t-3xl border-t border-blue-500/20">
+    <button onclick="switchPage('home')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 transition-all hover:text-blue-400 group" data-page="home">
+        <i data-lucide="home" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+        <span class="text-[10px]">Home</span>
+    </button>
+    <button onclick="switchPage('schedule')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 transition-all hover:text-blue-400 group" data-page="schedule">
+        <i data-lucide="calendar" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+        <span class="text-[10px]">Jadwal</span>
+    </button>
+    <button onclick="switchPage('movies')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 transition-all hover:text-blue-400 group" data-page="movies">
+        <i data-lucide="clapperboard" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+        <span class="text-[10px]">Movies</span>
+    </button>
+    <button onclick="switchPage('browse')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 transition-all hover:text-blue-400 group" data-page="browse">
+        <i data-lucide="compass" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+        <span class="text-[10px]">Browse</span>
+    </button>
+</nav>
+
+<div class="search-container px-6 py-4 bg-dark/50" id="search-container" style="display: none;">
+    <div class="relative">
+        <input type="text" class="search-bar w-full py-3 px-5 pr-12 bg-surface rounded-2xl border border-blue-500/30 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 transition-all" id="search-input" placeholder="🔍 Cari anime favoritmu...">
+        <i data-lucide="search" class="absolute right-4 top-1/2 -translate-y-1/2 text-blue-500 w-5 h-5"></i>
+    </div>
+</div>
+
+<main class="pb-10">
+    <div id="page-home" class="page active px-4">
+        <div class="flex items-center gap-2 mb-4 mt-6 px-2">
+            <i data-lucide="zap" class="w-5 h-5 text-blue-500"></i>
+            <h2 class="text-lg font-semibold uppercase tracking-wider text-glow-blue">🔥 Anime Terbaru</h2>
+        </div>
+        <div class="scroll-container flex gap-4 overflow-x-auto no-scrollbar pb-6" id="latest-container">
+            <div class="loading-skeleton w-32 h-48 rounded-2xl"></div>
+        </div>
+        <div class="flex items-center gap-2 mb-4 mt-2 px-2">
+            <i data-lucide="calendar" class="w-5 h-5 text-blue-500"></i>
+            <h2 class="text-lg font-semibold uppercase tracking-wider text-glow-blue">📅 Jadwal Hari Ini</h2>
+        </div>
+        <div class="scroll-container flex gap-4 overflow-x-auto no-scrollbar pb-6" id="home-schedule">
+            <div class="loading-skeleton w-32 h-48 rounded-2xl"></div>
+        </div>
+    </div>
+    <div id="page-schedule" class="page hidden px-4">
+        <div class="day-tabs flex gap-2 overflow-x-auto no-scrollbar py-4 mb-4 mt-4" id="day-tabs"></div>
+        <div id="schedule-content"><div class="loading w-full text-center py-20 text-gray-500">Memuat...</div></div>
+    </div>
+    <div id="page-movies" class="page hidden px-4">
+        <div class="flex items-center gap-2 mb-4 mt-6 px-2">
+            <i data-lucide="film" class="w-5 h-5 text-blue-500"></i>
+            <h2 class="text-lg font-semibold uppercase tracking-wider text-glow-blue">🎬 Anime Movies</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="movies-container">
+            <div class="loading text-center py-20 text-gray-500 col-span-full">Memuat...</div>
+        </div>
+        <div id="movies-pagination" class="mt-8 flex justify-center items-center gap-2 flex-wrap"></div>
+    </div>
+    <div id="page-browse" class="page hidden px-4 mt-6">
+        <div class="bg-surface/50 rounded-3xl p-6 mb-6 backdrop-blur-sm border border-blue-500/20">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-blue-400 flex items-center gap-2">
+                    <i data-lucide="folder-search" class="w-5 h-5"></i>
+                    Browse A-Z
+                </h3>
+                <div class="text-[10px] text-blue-400 px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/30" id="browse-stats">Total: 0 anime</div>
+            </div>
+            <div class="az-nav flex flex-wrap gap-2" id="az-nav"></div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="browse-container">
+            <div class="loading text-center py-20 text-gray-500 col-span-full">Memuat data...</div>
+        </div>
+        <div id="browse-pagination" class="mt-8 flex justify-center items-center gap-2 flex-wrap"></div>
+    </div>
+    <div id="page-search" class="page hidden px-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4" id="search-results">
+            <div class="text-center py-20 text-gray-500 col-span-full">Ketik untuk mencari...</div>
+        </div>
+    </div>
+    <div id="page-genres" class="page hidden px-4 mt-6">
+        <div class="flex items-center gap-2 mb-6 px-2">
+            <i data-lucide="tag" class="w-5 h-5 text-blue-500"></i>
+            <h2 class="text-lg font-semibold uppercase tracking-wider text-glow-blue">Genre List</h2>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-8" id="genre-list"></div>
+        <div id="genre-title" class="text-sm font-medium text-gray-400 mb-4 px-2 hidden">Menampilkan genre: <span class="text-blue-400" id="active-genre-name"></span></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="genre-container"></div>
+    </div>
+</main>
+
+<!-- Player Sheet -->
+<div class="player-sheet fixed inset-0 z-[300] glass pt-2 pb-10 overflow-y-auto translate-y-full" id="player-sheet">
+    <button class="fixed top-6 right-6 z-[310] bg-gradient-to-r from-blue-600 to-blue-700 p-2.5 rounded-full text-white shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all glow-effect" onclick="closePlayer()">
+        <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+    <div class="player-content mt-4" id="player-content"></div>
+</div>
+
+<!-- Profile Sheet dengan icon lebih kece -->
+<div class="profile-sheet fixed inset-0 z-[350] glass pt-2 pb-10 overflow-y-auto translate-y-full" id="profile-sheet">
+    <button class="fixed top-6 right-6 z-[360] bg-gradient-to-r from-blue-600 to-blue-700 p-2.5 rounded-full text-white shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all" onclick="closeProfile()">
+        <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+    <div class="profile-content px-6 mt-12 flex flex-col items-center gap-6">
+        <div class="w-40 h-40 rounded-full overflow-hidden ring-4 ring-blue-500/70 shadow-2xl shadow-blue-500/50">
+            <img src="https://files.catbox.moe/jwbvn2.jpg" alt="Anime Profile" class="w-full h-full object-cover" onerror="this.src='https://files.catbox.moe/jwbvn2.jpg'">
+        </div>
+        <div class="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-blue-500/30 w-full text-center">
+            <div class="flex justify-center mb-3">
+                <i data-lucide="crown" class="w-8 h-8 text-blue-500"></i>
+            </div>
+            <h2 class="text-2xl font-extrabold bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent mb-3">✨ AnimeKita - Streaming Premium ✨</h2>
+            <div class="h-1 w-16 bg-gradient-to-r from-blue-500 to-blue-600 mx-auto rounded-full mb-5"></div>
+            <p class="text-gray-200 leading-relaxed text-base">
+                Aplikasi <span class="font-bold text-blue-400">AnimeKita - Streaming Premium</span> adalah aplikasi berbasis web yang dikembangkan oleh <span class="font-semibold text-white">AnimeKita - CLOUD</span>.
+            </p>
+            <div class="mt-5 bg-blue-500/10 rounded-2xl p-4 border border-blue-500/30">
+                <p class="text-sm font-medium flex items-center justify-center gap-2">
+                    <i data-lucide="tv" class="w-5 h-5 text-blue-400"></i>
+                    <span>Aplikasi ini bisa nonton Anime sepuasnya <span class="text-blue-400 font-bold">TANPA IKLAN!</span></span>
+                </p>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-3 text-center text-xs text-gray-400">
+                <div class="bg-white/5 p-3 rounded-xl hover:bg-blue-500/20 transition-all"><i data-lucide="film" class="w-4 h-4 inline text-blue-400"></i> Full HD Streaming</div>
+                <div class="bg-white/5 p-3 rounded-xl hover:bg-blue-500/20 transition-all"><i data-lucide="zap" class="w-4 h-4 inline text-blue-400"></i> Update Tercepat</div>
+                <div class="bg-white/5 p-3 rounded-xl hover:bg-blue-500/20 transition-all"><i data-lucide="database" class="w-4 h-4 inline text-blue-400"></i> Server Stabil</div>
+                <div class="bg-white/5 p-3 rounded-xl hover:bg-blue-500/20 transition-all"><i data-lucide="heart" class="w-4 h-4 inline text-blue-400"></i> Gratis Selamanya</div>
+            </div>
+        </div>
+        <p class="text-[10px] text-gray-500 text-center mt-4">© 2026 AnimeKita CLOUD | AnimeKita - Streaming</p>
+    </div>
+</div>
+
+<div id="api-badge" class="api-badge primary"></div>
+
+
+  <script src="a.js"></script>
+</body>
+</html>
