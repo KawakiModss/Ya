@@ -4,7 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/jpeg" href="https://files.catbox.moe/1bdpm6.jpg">
+<link rel="shortcut icon" type="image/jpeg" href="https://files.catbox.moe/1bdpm6.jpg">
+<meta name="theme-color" content="#FACC15">
 <title>Hiroko - Website Official</title>
+<meta name="description" content="Pusat website terbaik kawaki.">
+<meta name="keywords" content="Thanks To All">
+<meta name="author" content="Kawaki">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://play.everfallnet.my.id/">
+<meta property="og:title" content="Hiroko - Website Official">
+<meta property="og:description" content="Website Official Kawaki">
+<meta property="og:image" content="https://files.catbox.moe/1bdpm6.jpg">
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="Hiroko - Website Official">
+<meta property="twitter:description" content="Website Official Kawaki">
+<meta property="twitter:image" content="https://files.catbox.moe/1bdpm6.jpg">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -63,18 +78,6 @@ body {
     100% { left: 150%; }
 }
 
-.slogan {
-    color: #FACC15;
-    margin-top: 15px;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    line-height: 1.6;
-    animation: fadeInUp 1s ease-out;
-}
-
 .loading-text {
     color: #666;
     margin-top: 15px;
@@ -89,17 +92,12 @@ body {
     50% { opacity: 1; }
     100% { opacity: 0.5; }
 }
-
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
 </style>
 </head>
 <body>
 <div class="loading-container">
     <div class="logo-wrapper">
-        <img src="https://files.catbox.moe/defcsh.jpg" alt="Kawaki Logo" class="logo-img">
+        <img src="https://files.catbox.moe/defcsh.jpg" alt="Logo" class="logo-img">
     </div>
     <div class="loading-text">
         TUNGGU SEBENTAR YA,<br>LAGI LOADING...
@@ -108,10 +106,9 @@ body {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Redirect setelah 10 detik (ubah sesuai kebutuhan)
     setTimeout(() => {
-        // window.location.href = 'profile.html'; // aktifkan kalo ada file profile.html
-        console.log("Redirect ke profile.html (dinonaktifkan sementara)");
+        // Redirect ke profile.html (biarkan seperti ini atau hapus)
+        window.location.href = 'profile.html';
     }, 10000);
 });
 </script>
