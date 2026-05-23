@@ -469,10 +469,10 @@ window.showOnboardingWelcome = function(username) {
 const GOOGLE_CLIENT_ID = "205977709770-3d0am349pfuhpv45soo1qt5o6h7cbofk.apps.googleusercontent.com";
 const REDIRECT_URI = "https://play.everfallnet.my.id/auth/google/callback";
 const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=profile email&access_type=offline&prompt=consent`;
-const DEFAULT_KEY = "AIzaSyALplbLVy95RL1P8bhrCuz6Nhvitu77_vc";
-const DEFAULT_KEY2 = "AIzaSyALplbLVy95RL1P8bhrCuz6Nhvitu77_vc";
+const DEFAULT_KEY = "AIzaSyCNHxp-T8PfIdiMYPPCVYLTvWODyAR2mS0";
+const DEFAULT_KEY2 = "AIzaSyCNHxp-T8PfIdiMYPPCVYLTvWODyAR2mS0";
 const DEEPSEEK_KEY = "sk-61792d83a3b644bcb21a2e2185c7419b";
-const GROQ_KEY = "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";
+const GROQ_KEY = "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";
 const _k = 42;
 const _ec = [[114, 115, 120, 101, 97, 101, 111, 66, 19], [126, 82, 80, 80, 120, 79, 27, 19]];
 const PREMIUM_CODES = _ec.map(e => e.map(c => String.fromCharCode(c ^ _k)).join(''));
