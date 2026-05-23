@@ -1,134 +1,107 @@
-const questions = [
-  // LOGIKA
-  {
-    cat: "Logika", icon: "fa-solid fa-sitemap",
-    q: "Jika semua kucing adalah hewan, dan beberapa hewan adalah mamalia, manakah kesimpulan yang PASTI benar?",
-    opts: ["Semua kucing adalah mamalia","Beberapa kucing mungkin mamalia","Tidak ada kucing yang mamalia","Semua mamalia adalah kucing"],
-    ans: 1
-  },
-  {
-    cat: "Logika", icon: "fa-solid fa-sitemap",
-    q: "A lebih tua dari B. B lebih tua dari C. D lebih muda dari C. Siapa yang paling tua?",
-    opts: ["B","C","A","D"],
-    ans: 2
-  },
-  {
-    cat: "Logika", icon: "fa-solid fa-sitemap",
-    q: "Dalam sebuah barisan, setiap orang berdiri di antara dua orang lainnya kecuali yang ada di ujung. Jika ada 7 orang, berapa banyak yang berdiri di tepi?",
-    opts: ["1","2","3","4"],
-    ans: 1
-  },
-  {
-    cat: "Logika", icon: "fa-solid fa-sitemap",
-    q: "Bila P maka Q. P adalah benar. Apa yang dapat disimpulkan?",
-    opts: ["Q mungkin benar","Q pasti benar","Q pasti salah","Tidak dapat disimpulkan"],
-    ans: 1
-  },
+const baseQuestions = [
+  // LOGIKA (1-4)
+  { cat: "Logika", icon: "fa-solid fa-sitemap", q: "Jika semua kucing adalah hewan, dan beberapa hewan adalah mamalia, manakah kesimpulan yang PASTI benar?", opts: ["Semua kucing adalah mamalia","Beberapa kucing mungkin mamalia","Tidak ada kucing yang mamalia","Semua mamalia adalah kucing"], ans: 1 },
+  { cat: "Logika", icon: "fa-solid fa-sitemap", q: "A lebih tua dari B. B lebih tua dari C. D lebih muda dari C. Siapa yang paling tua?", opts: ["B","C","A","D"], ans: 2 },
+  { cat: "Logika", icon: "fa-solid fa-sitemap", q: "Dalam sebuah barisan, setiap orang berdiri di antara dua orang lainnya kecuali yang ada di ujung. Jika ada 7 orang, berapa banyak yang berdiri di tepi?", opts: ["1","2","3","4"], ans: 1 },
+  { cat: "Logika", icon: "fa-solid fa-sitemap", q: "Bila P maka Q. P adalah benar. Apa yang dapat disimpulkan?", opts: ["Q mungkin benar","Q pasti benar","Q pasti salah","Tidak dapat disimpulkan"], ans: 1 },
+  
+  // POLA ANGKA (5-8)
+  { cat: "Pola Angka", icon: "fa-solid fa-hashtag", q: "Lanjutkan deret berikut: 2, 6, 12, 20, 30, ...", opts: ["38","40","42","44"], ans: 2 },
+  { cat: "Pola Angka", icon: "fa-solid fa-hashtag", q: "Berapakah bilangan yang hilang? 1, 1, 2, 3, 5, 8, __, 21", opts: ["11","12","13","14"], ans: 2 },
+  { cat: "Pola Angka", icon: "fa-solid fa-hashtag", q: "Deret: 3, 9, 27, 81, ... Bilangan selanjutnya adalah?", opts: ["162","243","324","405"], ans: 1 },
+  { cat: "Pola Angka", icon: "fa-solid fa-hashtag", q: "Jika pola adalah: 4, 8, 16, 32, 64, maka bilangan ke-7 adalah?", opts: ["128","192","256","512"], ans: 2 },
 
-  // POLA ANGKA
-  {
-    cat: "Pola Angka", icon: "fa-solid fa-hashtag",
-    q: "Lanjutkan deret berikut: 2, 6, 12, 20, 30, ...",
-    opts: ["38","40","42","44"],
-    ans: 2
-  },
-  {
-    cat: "Pola Angka", icon: "fa-solid fa-hashtag",
-    q: "Berapakah bilangan yang hilang? 1, 1, 2, 3, 5, 8, __, 21",
-    opts: ["11","12","13","14"],
-    ans: 2
-  },
-  {
-    cat: "Pola Angka", icon: "fa-solid fa-hashtag",
-    q: "Deret: 3, 9, 27, 81, ... Bilangan selanjutnya adalah?",
-    opts: ["162","243","324","405"],
-    ans: 1
-  },
-  {
-    cat: "Pola Angka", icon: "fa-solid fa-hashtag",
-    q: "Jika pola adalah: 4, 8, 16, 32, 64, maka bilangan ke-7 adalah?",
-    opts: ["128","192","256","512"],
-    ans: 2
-  },
+  // MATEMATIKA (9-12)
+  { cat: "Matematika", icon: "fa-solid fa-calculator", q: "Sebuah toko memberi diskon 25% dari harga Rp 800.000. Berapa harga setelah diskon?", opts: ["Rp 550.000","Rp 600.000","Rp 650.000","Rp 700.000"], ans: 1 },
+  { cat: "Matematika", icon: "fa-solid fa-calculator", q: "Jika 5 pekerja menyelesaikan pekerjaan dalam 8 hari, berapa hari yang dibutuhkan 10 pekerja untuk menyelesaikan pekerjaan yang sama?", opts: ["2 hari","4 hari","6 hari","8 hari"], ans: 1 },
+  { cat: "Matematika", icon: "fa-solid fa-calculator", q: "Berapakah nilai x jika 3x + 12 = 33?", opts: ["5","6","7","8"], ans: 2 },
+  { cat: "Matematika", icon: "fa-solid fa-calculator", q: "Dua angka memiliki selisih 14 dan jumlah 64. Angka yang lebih kecil adalah?", opts: ["23","25","27","29"], ans: 1 },
 
-  // MATEMATIKA
-  {
-    cat: "Matematika", icon: "fa-solid fa-calculator",
-    q: "Sebuah toko memberi diskon 25% dari harga Rp 800.000. Berapa harga setelah diskon?",
-    opts: ["Rp 550.000","Rp 600.000","Rp 650.000","Rp 700.000"],
-    ans: 1
-  },
-  {
-    cat: "Matematika", icon: "fa-solid fa-calculator",
-    q: "Jika 5 pekerja menyelesaikan pekerjaan dalam 8 hari, berapa hari yang dibutuhkan 10 pekerja untuk menyelesaikan pekerjaan yang sama?",
-    opts: ["2 hari","4 hari","6 hari","8 hari"],
-    ans: 1
-  },
-  {
-    cat: "Matematika", icon: "fa-solid fa-calculator",
-    q: "Berapakah nilai x jika 3x + 12 = 33?",
-    opts: ["5","6","7","8"],
-    ans: 2
-  },
-  {
-    cat: "Matematika", icon: "fa-solid fa-calculator",
-    q: "Dua angka memiliki selisih 14 dan jumlah 64. Angka yang lebih kecil adalah?",
-    opts: ["23","25","27","29"],
-    ans: 1
-  },
+  // POLA VISUAL (13-15)
+  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Jika MERAH → HIJAU → BIRU mengikuti pola pergantian warna primer, warna apa yang mengikuti setelah BIRU jika pola berulang?", opts: ["Kuning","Merah","Ungu","Oranye"], ans: 1 },
+  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Cermin sebuah huruf 'R' secara horizontal akan terlihat seperti huruf apa?", opts: ["R terbalik","Huruf yang tidak standar","Tetap R","Huruf K"], ans: 1 },
+  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Sebuah kubus memiliki 6 sisi. Jika setiap sisi dibagi menjadi 4 bagian, ada berapa bagian total?", opts: ["18","20","22","24"], ans: 3 },
 
-  // POLA VISUAL
-  {
-    cat: "Pola Visual", icon: "fa-solid fa-eye",
-    q: "Jika MERAH → HIJAU → BIRU mengikuti pola pergantian warna primer, warna apa yang mengikuti setelah BIRU jika pola berulang?",
-    opts: ["Kuning","Merah","Ungu","Oranye"],
-    ans: 1
-  },
-  {
-    cat: "Pola Visual", icon: "fa-solid fa-eye",
-    q: "Cermin sebuah huruf 'R' secara horizontal akan terlihat seperti huruf apa?",
-    opts: ["R terbalik","Huruf yang tidak standar","Tetap R","Huruf K"],
-    ans: 1
-  },
-  {
-    cat: "Pola Visual", icon: "fa-solid fa-eye",
-    q: "Sebuah kubus memiliki 6 sisi. Jika setiap sisi dibagi menjadi 4 bagian, ada berapa bagian total?",
-    opts: ["18","20","22","24"],
-    ans: 3
-  },
+  // BAHASA & VERBAL (16-20)
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Kata mana yang paling BERBEDA dari kelompoknya?", opts: ["Mawar","Melati","Anggrek","Mangga"], ans: 3 },
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Analogi: Buku : Perpustakaan = Lukisan : ?", opts: ["Kanvas","Museum","Seniman","Galeri"], ans: 3 },
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Manakah kata yang merupakan lawan kata dari 'Kontradiksi'?", opts: ["Persetujuan","Perbedaan","Konflik","Perdebatan"], ans: 0 },
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Jika 'Cepat' adalah antonim dari 'Lambat', maka antonim dari 'Boros' adalah?", opts: ["Hemat","Kaya","Pelit","Miskin"], ans: 0 },
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Lengkapi analogi: Dokter : Rumah Sakit = Hakim : ?", opts: ["Penjara","Pengadilan","Kantor Polisi","Kejaksaan"], ans: 1 },
 
-  // BAHASA & VERBAL
-  {
-    cat: "Verbal", icon: "fa-solid fa-spell-check",
-    q: "Kata mana yang paling BERBEDA dari kelompoknya?",
-    opts: ["Mawar","Melati","Anggrek","Mangga"],
-    ans: 3
-  },
-  {
-    cat: "Verbal", icon: "fa-solid fa-spell-check",
-    q: "Analogi: Buku : Perpustakaan = Lukisan : ?",
-    opts: ["Kanvas","Museum","Seniman","Galeri"],
-    ans: 3
-  },
-  {
-    cat: "Verbal", icon: "fa-solid fa-spell-check",
-    q: "Manakah kata yang merupakan lawan kata dari 'Kontradiksi'?",
-    opts: ["Persetujuan","Perbedaan","Konflik","Perdebatan"],
-    ans: 0
-  },
-  {
-    cat: "Verbal", icon: "fa-solid fa-spell-check",
-    q: "Jika 'Cepat' adalah antonim dari 'Lambat', maka antonim dari 'Boros' adalah?",
-    opts: ["Hemat","Kaya","Pelit","Miskin"],
-    ans: 0
-  },
-  {
-    cat: "Verbal", icon: "fa-solid fa-spell-check",
-    q: "Lengkapi analogi: Dokter : Rumah Sakit = Hakim : ?",
-    opts: ["Penjara","Pengadilan","Kantor Polisi","Kejaksaan"],
-    ans: 1
-  }
+  // BAHASA INDONESIA (21-25)
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Kata 'sangat' dalam bahasa Indonesia termasuk jenis kata?", opts: ["Nomina","Verba","Adjektiva","Adverbia"], ans: 3 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Manakah kalimat yang menggunakan ejaan yang tepat?", opts: ["Saya pergi ke pasar jam 2 sore","Saya pergi ke Pasar jam 2 sore","Saya pergi ke Pasar jam 2 Sore","saya pergi ke Pasar jam 2 sore"], ans: 0 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Apa imbuhan yang tepat untuk kata 'dasar' menjadi 'mempunyai dasar'?", opts: ["ber-","me-","di-","ke-"], ans: 0 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Sinonim dari kata 'kompleks' adalah?", opts: ["Sederhana","Rumit","Mudah","Lurus"], ans: 1 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Kalimat pasif dari 'Ayah membeli mobil baru' adalah?", opts: ["Mobil baru dibeli ayah","Ayah membelikan mobil baru","Mobil baru membeli ayah","Dibeli ayah mobil baru"], ans: 0 },
+
+  // BAHASA INGGRIS (26-30)
+  { cat: "English", icon: "fa-solid fa-flag-usa", q: "Which sentence is grammatically correct?", opts: ["She go to school yesterday","She went to school yesterday","She goes to school yesterday","She gone to school yesterday"], ans: 1 },
+  { cat: "English", icon: "fa-solid fa-flag-usa", q: "What is the antonym of 'ancient'?", opts: ["Old","Modern","Historic","Aged"], ans: 1 },
+  { cat: "English", icon: "fa-solid fa-flag-usa", q: "Choose the correct passive: 'The chef cooks the meal'", opts: ["The meal is cooked by the chef","The meal was cooked by the chef","The meal cooked by the chef","The meal has cooked by the chef"], ans: 0 },
+  { cat: "English", icon: "fa-solid fa-flag-usa", q: "Which word means 'a person who writes books'?", opts: ["Author","Editor","Publisher","Printer"], ans: 0 },
+  { cat: "English", icon: "fa-solid fa-flag-usa", q: "Complete: If I had studied harder, I ... passed the exam.", opts: ["will have","would have","would had","would has"], ans: 1 },
+
+  // BAHASA JEPANG (31-33)
+  { cat: "日本語", icon: "fa-solid fa-japan", q: "Apa arti dari 'こんにちは' (Konnichiwa)?", opts: ["Selamat pagi","Selamat siang","Selamat malam","Selamat tidur"], ans: 1 },
+  { cat: "日本語", icon: "fa-solid fa-japan", q: "Huruf 'ありがとう' dibaca sebagai?", opts: ["Arigatou","Sayonara","Ohayou","Sumimasen"], ans: 0 },
+  { cat: "日本語", icon: "fa-solid fa-japan", q: "Apa arti 'sakura'?", opts: ["Bunga matahari","Bunga sakura","Bunga mawar","Bunga melati"], ans: 1 },
+
+  // BAHASA ARAB (34-36)
+  { cat: "العربية", icon: "fa-solid fa-mosque", q: "Apa arti dari 'السلام عليكم' (Assalamu'alaikum)?", opts: ["Semoga keselamatan terlimpah padamu","Selamat pagi","Selamat datang","Terima kasih"], ans: 0 },
+  { cat: "العربية", icon: "fa-solid fa-mosque", q: "Kata 'بسم الله' (Bismillah) artinya?", opts: ["Dengan nama Allah","Maha Suci Allah","Allah Maha Besar","Segala puji bagi Allah"], ans: 0 },
+  { cat: "العربية", icon: "fa-solid fa-mosque", q: "Angka 5 dalam bahasa Arab adalah?", opts: ["واحد (Wahid)","اثنان (Itsnan)","ثلاثة (Tsalatsah)","خمسة (Khamsah)"], ans: 3 },
+
+  // ASTRONOMI (37-40)
+  { cat: "Astronomi", icon: "fa-solid fa-meteor", q: "Planet terbesar di tata surya kita adalah?", opts: ["Jupiter","Saturnus","Mars","Bumi"], ans: 0 },
+  { cat: "Astronomi", icon: "fa-solid fa-meteor", q: "Benda langit yang mengelilingi planet disebut?", opts: ["Bintang","Komet","Satelit","Asteroid"], ans: 2 },
+  { cat: "Astronomi", icon: "fa-solid fa-meteor", q: "Galaksi tempat Bumi berada bernama?", opts: ["Andromeda","Bimasakti","Triangulum","Sombrero"], ans: 1 },
+  { cat: "Astronomi", icon: "fa-solid fa-meteor", q: "Fase bulan saat sisi yang diterangi matahari membentuk lingkaran penuh disebut?", opts: ["Bulan baru","Bulan sabit","Bulan purnama","Bulan separuh"], ans: 2 },
+
+  // SEJARAH (41-43)
+  { cat: "Sejarah", icon: "fa-solid fa-landmark", q: "Proklamasi Kemerdekaan Indonesia dibacakan pada tahun?", opts: ["1942","1943","1945","1946"], ans: 2 },
+  { cat: "Sejarah", icon: "fa-solid fa-landmark", q: "Siapa penemu mesin uap?", opts: ["Isaac Newton","James Watt","Albert Einstein","Nikola Tesla"], ans: 1 },
+  { cat: "Sejarah", icon: "fa-solid fa-landmark", q: "Perang dunia II berakhir pada tahun?", opts: ["1943","1944","1945","1946"], ans: 2 },
+
+  // GEOGRAFI (44-46)
+  { cat: "Geografi", icon: "fa-solid fa-globe-asia", q: "Gunung tertinggi di dunia adalah?", opts: ["Everest","Kilimanjaro","K2","Elbrus"], ans: 0 },
+  { cat: "Geografi", icon: "fa-solid fa-globe-asia", q: "Benua terluas di dunia adalah?", opts: ["Afrika","Amerika","Asia","Antartika"], ans: 2 },
+  { cat: "Geografi", icon: "fa-solid fa-globe-asia", q: "Samudra terbesar di Bumi adalah?", opts: ["Atlantik","Hindia","Arktik","Pasifik"], ans: 3 },
+
+  // KIMIA (47-48)
+  { cat: "Kimia", icon: "fa-solid fa-flask", q: "Lambang kimia untuk Air adalah?", opts: ["O2","CO2","H2O","NaCl"], ans: 2 },
+  { cat: "Kimia", icon: "fa-solid fa-flask", q: "Unsur dengan nomor atom 6 adalah?", opts: ["Oksigen","Karbon","Hidrogen","Nitrogen"], ans: 1 },
+
+  // BIOLOGI (49-50)
+  { cat: "Biologi", icon: "fa-solid fa-dna", q: "Organ yang berfungsi memompa darah adalah?", opts: ["Paru-paru","Hati","Jantung","Ginjal"], ans: 2 },
+  { cat: "Biologi", icon: "fa-solid fa-dna", q: "Proses fotosintesis menghasilkan?", opts: ["Karbon dioksida","Oksigen","Nitrogen","Hidrogen"], ans: 1 }
 ];
+
+// ========== FITUR RANDOM SHUFFLE ==========
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function shuffleOptions(question) {
+  // buat array index [0,1,2,3] lalu acak
+  const indices = [0, 1, 2, 3];
+  shuffleArray(indices);
+  const newOpts = indices.map(i => question.opts[i]);
+  // cari index baru dari jawaban benar
+  let newAns = indices.findIndex(i => i === question.ans);
+  return {
+    ...question,
+    opts: newOpts,
+    ans: newAns
+  };
+}
+
+let questions = []; // bakal diisi random setiap start
 
 let userName = '';
 let currentQ = 0;
@@ -161,6 +134,15 @@ function startTest() {
     return;
   }
   userName = input;
+  
+  // --- RANDOMIZE TOTAL ---
+  // 1. Copy base questions
+  let shuffledBase = [...baseQuestions];
+  // 2. Acak urutan soal
+  shuffledBase = shuffleArray(shuffledBase);
+  // 3. Untuk setiap soal, acak opsi jawaban
+  questions = shuffledBase.map(q => shuffleOptions(q));
+  
   currentQ = 0;
   score = 0;
   userAnswers = [];
@@ -176,7 +158,7 @@ function loadQuestion() {
 
   const q = questions[currentQ];
   document.getElementById('q-current').textContent = currentQ + 1;
-  document.getElementById('progress-bar').style.width = ((currentQ / 20) * 100) + '%';
+  document.getElementById('progress-bar').style.width = ((currentQ / 50) * 100) + '%';
   document.getElementById('q-category-text').textContent = q.cat;
   document.getElementById('q-category').querySelector('i').className = q.icon;
   document.getElementById('question-text').textContent = q.q;
@@ -255,18 +237,16 @@ function showResult() {
   clearInterval(timerInterval);
   showScreen('result');
 
-  // IQ calculation
-  const pct = score / 20;
+  const pct = score / 50;
   const iq = Math.round(70 + pct * 75);
-  const wrong = 20 - score;
-  const accPct = Math.round((score / 20) * 100);
+  const wrong = 50 - score;
+  const accPct = Math.round((score / 50) * 100);
 
   document.getElementById('result-name').textContent = userName;
   document.getElementById('stat-correct').textContent = score;
   document.getElementById('stat-wrong').textContent = wrong;
   document.getElementById('stat-pct').textContent = accPct + '%';
 
-  // IQ category
   let cat, color, desc;
   if (iq >= 140) {
     cat = 'Genius'; color = '#00f5c4'; desc = 'Kecerdasan sangat luar biasa! Kamu termasuk dalam kelompok 0.1% individu dengan kemampuan kognitif tertinggi di dunia.';
@@ -289,7 +269,6 @@ function showResult() {
   document.getElementById('iq-cat-text').textContent = cat;
   document.getElementById('result-desc').textContent = desc;
 
-  // Animate IQ ring
   const circumference = 2 * Math.PI * 80;
   const fill = document.getElementById('iq-ring-fill');
   const fillPct = Math.min(pct, 1);
@@ -301,7 +280,6 @@ function showResult() {
     fill.style.strokeDashoffset = circumference * (1 - fillPct);
   }, 300);
 
-  // Animate IQ number
   const iqDisplay = document.getElementById('iq-display');
   let startIQ = 70;
   const endIQ = iq;
@@ -316,17 +294,13 @@ function showResult() {
   }
   setTimeout(() => requestAnimationFrame(animIQ), 400);
 
-  // Scale marker position
-  // IQ 70 = 0%, 145 = 100%
   const scalePct = Math.min(Math.max(((iq - 70) / 75) * 100, 0), 100);
   setTimeout(() => {
     document.getElementById('scale-marker').style.left = scalePct + '%';
   }, 600);
 
-  // Confetti if good score
-  if (score >= 14) triggerConfetti();
+  if (score >= 35) triggerConfetti();
 
-  // Particles
   spawnParticles();
 }
 
@@ -378,6 +352,12 @@ function spawnParticles() {
 
 function retryTest() {
   document.getElementById('particleBg').innerHTML = '';
+  
+  // RANDOMIZE LAGI SAAT COBA LAGI
+  let shuffledBase = [...baseQuestions];
+  shuffledBase = shuffleArray(shuffledBase);
+  questions = shuffledBase.map(q => shuffleOptions(q));
+  
   currentQ = 0;
   score = 0;
   userAnswers = [];
@@ -392,7 +372,6 @@ function goWelcome() {
   showScreen('welcome');
 }
 
-// Enter key on name input
 document.getElementById('name-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') startTest();
 });
