@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prompt Library - by Kawaki</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet" href="o.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="profile-pic">
+      <img src="https://files.catbox.moe/68z6s9.jpg" alt="profile" onerror="this.src='https://placehold.co/100x100/333333/ffffff?text=K'">
+    </div>
+    <div class="nav-brand">
+      <div class="nav-title">AI Prompt Library</div>
+      <div class="nav-subtitle">by kawaki</div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openAdminModal()">
+      <i class="fa-solid fa-shield-halved"></i> Admin
+    </button>
+    <button class="btn btn-primary btn-sm" onclick="openAddModal()">
+      <i class="fa-solid fa-plus"></i> Tambah
+    </button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">
+    <i class="fa-solid fa-sparkles"></i> PROMPT COLLECTION
+  </div>
+  <h1>AI Prompt Library</h1>
+  <p>Koleksi prompt AI terbaik untuk berbagai platform. Simpan, kelola, dan gunakan kembali prompt favoritmu.</p>
+  <div class="stats-row">
+    <div class="stat-item"><div class="stat-num" id="totalCount">0</div><div class="stat-label">Total Prompts</div></div>
+    <div class="stat-item"><div class="stat-num" id="platformCount">0</div><div class="stat-label">AI Platforms</div></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="toolbar">
+    <div class="search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input class="search-input" id="searchInput" placeholder="Cari prompt..."></div>
+    <div id="adminBadge" style="display:none"><span class="admin-badge"><i class="fa-solid fa-crown"></i> Admin Mode</span></div>
+  </div>
+  <div class="filter-wrap" id="filterWrap"></div>
+  <div class="prompt-grid" id="promptGrid"></div>
+</div>
+
+<footer>2026 Kawaki — AI Prompt Library &nbsp;·&nbsp;<a href="https://t.me/youknowkawaki" target="_blank"><i class="fa-brands fa-telegram"></i> @YouKnowKawaki</a></footer>
+
+<!-- MODAL ADMIN DI TENGAH + BACKGROUND GAMBAR + BLUR -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-shield-halved"></i> Admin Login</div>
+      <button class="modal-close" onclick="closeModal('adminModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">PASSWORD ADMIN</label>
+        <input class="form-input" id="adminPass" type="password" placeholder="Masukkan password..." autofocus>
+        <div id="adminError" class="admin-error"><i class="fa-solid fa-circle-exclamation"></i> Password salah</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('adminModal')">Batal</button>
+      <button class="btn btn-primary" onclick="checkAdmin()">Masuk</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LAINNYA (ADD, VIEW) dengan tampilan biasa tanpa background gambar -->
+<div class="modal-overlay" id="addModal" style="background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);">
+  <div class="modal" style="background: var(--bg-secondary);">
+    <div class="modal-header"><div class="modal-title"><i class="fa-solid fa-plus"></i> Tambah Prompt Baru</div><button class="modal-close" onclick="closeModal('addModal')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Judul Prompt</label><input class="form-input" id="addTitle" placeholder="Contoh: Jailbreak GPT-4o..."></div>
+      <div class="form-group"><label class="form-label">AI Platform</label><select class="form-input" id="addPlatform" style="appearance: auto;"><option value="">Pilih...</option><option>ChatGPT</option><option>Claude</option><option>Gemini</option><option>DeepSeek</option><option>Grok</option><option>Midjourney</option></select></div>
+      <div class="form-group"><label class="form-label">Teks Prompt</label><textarea class="form-input" id="addContent" rows="4" placeholder="Tulis prompt..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('addModal')">Batal</button><button class="btn btn-primary" onclick="savePrompt()">Simpan</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="viewModal" style="background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);">
+  <div class="modal" style="background: var(--bg-secondary);">
+    <div class="modal-header"><div class="modal-title"><i class="fa-solid fa-eye"></i> <span id="viewTitle">-</span></div><button class="modal-close" onclick="closeModal('viewModal')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body"><div class="form-group"><label class="form-label">Platform</label><div id="viewPlatform" style="color:var(--text-secondary)">-</div></div><div class="form-group"><label class="form-label">Teks Prompt</label><textarea id="viewContent" class="form-input" readonly rows="8"></textarea></div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('viewModal')">Tutup</button><button class="btn btn-primary" onclick="copyFromView()">Salin</button></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+
+  <script src="o.js"></script>
+</body>
+</html>
