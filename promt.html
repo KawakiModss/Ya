@@ -9,15 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./o.css">
-    <style>
-        /* FIX: Hilangkan emoji dan teks "Im-Rian" */
-        .connection-text {
-            font-weight: 500;
-        }
-        .header-logo {
-            filter: drop-shadow(0 0 5px rgba(0,255,255,0.3));
-        }
-    </style>
 </head>
 <body>
     <!-- Particle Canvas Background -->
@@ -29,12 +20,7 @@
     <!-- Header -->
     <header class="header">
         <div class="header-left">
-            <!-- FIX: Ganti logo dengan icon Kawaki versi fix -->
-            <div class="header-logo-placeholder" style="width: 40px; height: 40px; background: linear-gradient(135deg, #00d4ff, #7c3aed); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-            </div>
+            <img src="https://mgx-backend-cdn.metadl.com/generate/images/934726/2026-03-12/481fa4ba-7fa8-4f9a-ac85-b9354ae8699c.png" alt="Kawaki Logo" class="header-logo">
             <div class="header-brand">
                 <span class="header-name">Kawaki</span>
                 <span class="header-subtitle">AI PROMPT LIBRARY</span>
@@ -71,11 +57,11 @@
         <a href="#prompts" class="nav-link">Prompt Collection</a>
     </div>
 
-    <!-- Server Connection Status Bar - FIXED TEXT -->
+    <!-- Server Connection Status Bar -->
     <div class="connection-bar" id="connectionBar">
         <div class="connection-bar-inner">
             <span class="connection-dot" id="connectionDot"></span>
-            <span class="connection-text" id="connectionText">Belum terhubung - Setup server untuk menyimpan data</span>
+            <span class="connection-text" id="connectionText">Tidak terhubung ke Server - Data hanya tersimpan di sesi ini</span>
             <button class="connection-setup-btn" id="connectionSetupBtn">Setup Server</button>
         </div>
     </div>
@@ -163,7 +149,9 @@
         </div>
 
         <!-- Prompt Grid -->
-        <div class="prompt-grid" id="promptGrid"></div>
+        <div class="prompt-grid" id="promptGrid">
+            <!-- Cards rendered by JS -->
+        </div>
 
         <!-- Empty State -->
         <div class="empty-state" id="emptyState" style="display:none;">
@@ -192,6 +180,7 @@
                     <input type="text" id="promptTitle" class="form-input" placeholder="Masukkan judul prompt..." required>
                 </div>
                 
+                <!-- Custom Platform Selector -->
                 <div class="form-group">
                     <label class="form-label">AI Platform</label>
                     <div class="custom-platform-dropdown" id="platformDropdown">
@@ -213,7 +202,107 @@
                                 <span class="platform-name">ChatGPT</span>
                                 <span class="platform-badge platform-badge-chatgpt">OpenAI</span>
                             </div>
-                            <!-- Platform options continue... -->
+                            <div class="platform-option" data-value="Claude">
+                                <div class="platform-icon platform-claude">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Claude</span>
+                                <span class="platform-badge platform-badge-claude">Anthropic</span>
+                            </div>
+                            <div class="platform-option" data-value="Gemini">
+                                <div class="platform-icon platform-gemini">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Gemini</span>
+                                <span class="platform-badge platform-badge-gemini">Google</span>
+                            </div>
+                            <div class="platform-option" data-value="DeepSeek">
+                                <div class="platform-icon platform-deepseek">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2L2 22h20L12 2zm0 3.5L18.5 20h-13L12 5.5z"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">DeepSeek</span>
+                                <span class="platform-badge platform-badge-deepseek">AI Lab</span>
+                            </div>
+                            <div class="platform-option" data-value="Grok">
+                                <div class="platform-icon platform-grok">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Grok</span>
+                                <span class="platform-badge platform-badge-grok">xAI</span>
+                            </div>
+                            <div class="platform-option" data-value="Copilot">
+                                <div class="platform-icon platform-copilot">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Copilot</span>
+                                <span class="platform-badge platform-badge-copilot">Microsoft</span>
+                            </div>
+                            <div class="platform-option" data-value="Perplexity">
+                                <div class="platform-icon platform-perplexity">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Perplexity</span>
+                                <span class="platform-badge platform-badge-perplexity">Search</span>
+                            </div>
+                            <div class="platform-option" data-value="Qwen AI">
+                                <div class="platform-icon platform-qwen">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.5L17.5 8 12 11.5 6.5 8 12 4.5z"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Qwen AI</span>
+                                <span class="platform-badge platform-badge-qwen">Alibaba</span>
+                            </div>
+                            <div class="platform-option" data-value="Llama">
+                                <div class="platform-icon platform-llama">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5z"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Llama</span>
+                                <span class="platform-badge platform-badge-llama">Meta</span>
+                            </div>
+                            <div class="platform-option" data-value="Midjourney">
+                                <div class="platform-icon platform-midjourney">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Midjourney</span>
+                                <span class="platform-badge platform-badge-midjourney">Image</span>
+                            </div>
+                            <div class="platform-option" data-value="Stable Diffusion">
+                                <div class="platform-icon platform-stable">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Stable Diffusion</span>
+                                <span class="platform-badge platform-badge-stable">Stability</span>
+                            </div>
+                            <div class="platform-option" data-value="Dola">
+                                <div class="platform-icon platform-dola">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <span class="platform-name">Dola</span>
+                                <span class="platform-badge platform-badge-dola">Assistant</span>
+                            </div>
                         </div>
                     </div>
                     <input type="hidden" id="promptPlatform" required>
@@ -286,7 +375,9 @@
 
             <form id="settingsForm">
                 <div class="form-group">
-                    <label class="form-label" for="ghToken">Server Personal Access Token (GHP)</label>
+                    <label class="form-label" for="ghToken">
+                        Server Personal Access Token (GHP)
+                    </label>
                     <div class="input-with-toggle">
                         <input type="password" id="ghToken" class="form-input" placeholder="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">
                         <button type="button" class="toggle-visibility" id="toggleToken" title="Tampilkan/Sembunyikan">
@@ -296,26 +387,29 @@
                             </svg>
                         </button>
                     </div>
-                    <span class="form-hint">Token harus memiliki izin "repo" (read/write)</span>
+                    <span class="form-hint">Token harus memiliki izin "repo" (read/write). Buat di Server > Settings > Developer settings > Personal access tokens</span>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="ghUsername">Username</label>
-                    <input type="text" id="ghUsername" class="form-input" placeholder="username github">
+                    <label class="form-label" for="ghUsername">Server Username</label>
+                    <input type="text" id="ghUsername" class="form-input" placeholder="contoh: kawaki">
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="ghRepo">Repository</label>
-                    <input type="text" id="ghRepo" class="form-input" placeholder="nama-repo">
+                    <label class="form-label" for="ghRepo">Nama Repository</label>
+                    <input type="text" id="ghRepo" class="form-input" placeholder="contoh: ai-prompt-library">
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="ghBranch">Branch</label>
+                    <label class="form-label" for="ghBranch">Branch (opsional)</label>
                     <input type="text" id="ghBranch" class="form-input" placeholder="main" value="main">
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="ghPath">Path database.json</label>
+                    <label class="form-label" for="ghPath">Path ke database.json (opsional)</label>
                     <input type="text" id="ghPath" class="form-input" placeholder="database.json" value="database.json">
                 </div>
 
-                <div class="settings-status" id="settingsStatus" style="display:none;"></div>
+                <div class="settings-status" id="settingsStatus" style="display:none;">
+                    <span class="status-icon" id="statusIcon"></span>
+                    <span class="status-text" id="statusText"></span>
+                </div>
 
                 <div class="form-actions">
                     <button type="button" class="btn-cancel" id="btnDisconnect" style="display:none;">Putuskan Koneksi</button>
@@ -354,125 +448,6 @@
         </div>
     </footer>
 
-    <!-- SCRIPT FIX TOTAL - LANGSUNG EKSEKUSI -->
-    <script>
-        (function() {
-            // ========== CLEAR OLD CONFIG ==========
-            try {
-                localStorage.removeItem('github_config');
-                localStorage.removeItem('server_config');
-                localStorage.removeItem('kawaki_auth_granted');
-                sessionStorage.clear();
-                console.log('%c[PARADOX] Config lama dibersihkan', 'color: #00ff00');
-            } catch(e) {}
-            
-            // ========== FIX CONNECTION BAR TEXT ==========
-            const fixConnectionText = function() {
-                const connText = document.getElementById('connectionText');
-                if (connText && connText.innerText.includes('Im-Rian')) {
-                    connText.innerText = 'Belum terhubung - Setup server dengan password: KawakiHIROX';
-                }
-                const connDot = document.getElementById('connectionDot');
-                if (connDot) {
-                    connDot.style.backgroundColor = '#ff4444';
-                    connDot.style.boxShadow = '0 0 8px #ff4444';
-                }
-            };
-            
-            // ========== FIX LOGO ==========
-            const fixLogo = function() {
-                const headerLeft = document.querySelector('.header-left');
-                if (headerLeft) {
-                    const oldImg = headerLeft.querySelector('.header-logo');
-                    if (oldImg) {
-                        oldImg.style.display = 'none';
-                    }
-                    // Check if placeholder already exists
-                    if (!headerLeft.querySelector('.header-logo-placeholder')) {
-                        const placeholder = document.createElement('div');
-                        placeholder.className = 'header-logo-placeholder';
-                        placeholder.style.cssText = 'width: 40px; height: 40px; background: linear-gradient(135deg, #00d4ff, #7c3aed); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px;';
-                        placeholder.innerHTML = '<svg viewBox="0 0 24 24" fill="white" width="24" height="24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
-                        headerLeft.insertBefore(placeholder, headerLeft.firstChild);
-                    }
-                }
-            };
-            
-            // ========== PASSWORD PROTECTION ==========
-            const ADMIN_PASSWORD = "KawakiHIROX";
-            const AUTH_KEY = "kawaki_auth_fixed";
-            
-            // Override function buka settings
-            const originalOpen = window.openSettingsModal;
-            window.openSettingsModal = function() {
-                const isAuth = sessionStorage.getItem(AUTH_KEY);
-                if (isAuth === 'true') {
-                    if (typeof originalOpen === 'function') originalOpen();
-                    else document.getElementById('settingsBtn')?.click();
-                } else {
-                    const pass = prompt(
-                        '╔════════════════════════════════════╗\n' +
-                        '║       SERVER SETTINGS ACCESS       ║\n' +
-                        '╚════════════════════════════════════╝\n\n' +
-                        'Enter password:'
-                    );
-                    if (pass === ADMIN_PASSWORD) {
-                        sessionStorage.setItem(AUTH_KEY, 'true');
-                        if (typeof originalOpen === 'function') originalOpen();
-                        else document.getElementById('settingsBtn')?.click();
-                    } else if (pass !== null) {
-                        alert('INVALID PASSWORD\nAkses ditolak.');
-                    }
-                }
-            };
-            
-            // Hook button events
-            document.addEventListener('DOMContentLoaded', function() {
-                fixConnectionText();
-                fixLogo();
-                
-                const settingsBtn = document.getElementById('settingsBtn');
-                const settingsBtnMobile = document.getElementById('settingsBtnMobile');
-                const setupBtn = document.getElementById('connectionSetupBtn');
-                
-                if (settingsBtn) {
-                    settingsBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.openSettingsModal();
-                    });
-                }
-                if (settingsBtnMobile) {
-                    settingsBtnMobile.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.openSettingsModal();
-                    });
-                }
-                if (setupBtn) {
-                    setupBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.openSettingsModal();
-                    });
-                }
-                
-                console.log('%c========================================', 'color: #ff9900');
-                console.log('%c[PARADOX AI] SYSTEM ACTIVE', 'color: #00ff00; font-size: 14px; font-weight: bold');
-                console.log('%c[PARADOX] Password: KawakiHIROX', 'color: #00ff00');
-                console.log('%c[PARADOX] No emoji mode - SVG icons only', 'color: #ff9900');
-                console.log('%c========================================', 'color: #ff9900');
-            });
-            
-            // Run if DOM already loaded
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
-                    fixConnectionText();
-                    fixLogo();
-                });
-            } else {
-                fixConnectionText();
-                fixLogo();
-            }
-        })();
-    </script>
     <script type="module" src="./o.js"></script>
 </body>
 </html>
