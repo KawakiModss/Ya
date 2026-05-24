@@ -469,8 +469,8 @@ window.showOnboardingWelcome = function(username) {
 const GOOGLE_CLIENT_ID = "205977709770-3d0am349pfuhpv45soo1qt5o6h7cbofk.apps.googleusercontent.com";
 const REDIRECT_URI = "https://play.everfallnet.my.id/auth/google/callback";
 const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=profile email&access_type=offline&prompt=consent`;
-const DEFAULT_KEY = "AIzaSyBujiNqldtmBUmfN2DdiiTuR9K8YFUa3DQ";
-const DEFAULT_KEY2 = "AIzaSyBujiNqldtmBUmfN2DdiiTuR9K8YFUa3DQ";
+const DEFAULT_KEY = "AIzaSyC-d4HgxWmZe2czMBRgvEjLeG_VljJtTsA";
+const DEFAULT_KEY2 = "AIzaSyC-d4HgxWmZe2czMBRgvEjLeG_VljJtTsA";
 const DEEPSEEK_KEY = "sk-61792d83a3b644bcb21a2e2185c7419b";
 const GROQ_KEY = "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";
 const CLAUDE_BASE = "https://api.anthropic.com/v1/messages";
@@ -1399,7 +1399,10 @@ function closeAnimeStation() {
   setTimeout(() => { document.getElementById("msg-input")?.focus(); }, 100);
 }
 
-// ========== SETTINGS MODAL - V2 DENGAN MENU KEK SCREENSHOT ==========
+// FULL CODE UNTUK OPEN SETTINGS DENGAN MENU NOTIF AI YANG REAL
+// LANGSUNG IMPLEMENTASI, BUKAN SIMULASI
+
+// ========== SETTINGS MODAL - V3 DENGAN MENU NOTIF AI (LENGKAP) ==========
 function openSettings() {
   if (!currentUser) { showToast("❌ Login dulu, goblok!", true); return; }
   
@@ -1449,28 +1452,44 @@ function openSettings() {
           <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
         </div>
         
-        <!-- KEMAMPUAN 3 DIAKTIFKAN -->
+        <!-- NOTIF AI - MENU BARU DENGAN GRADIENT UNGU -->
+        <div class="settings-menu-item" data-section="notifai" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
+          <div style="width:36px; height:36px; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:12px; display:flex; align-items:center; justify-content:center;">
+            <i class="fas fa-bell" style="color:white; font-size:18px;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:500; color:#1a1a1a; display:flex; align-items:center; gap:8px;">
+              Notif AI
+              <span id="notif-ai-status-badge" style="background:${localStorage.getItem('notif_ai_enabled') === 'true' ? '#e8f0e8' : '#fee2e2'}; color:${localStorage.getItem('notif_ai_enabled') === 'true' ? '#2d6a4f' : '#dc2626'}; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:500;">${localStorage.getItem('notif_ai_enabled') === 'true' ? 'AKTIF' : 'NONAKTIF'}</span>
+            </div>
+            <div style="font-size:11px; color:#9ca3af;">AI siap membantu dari notifikasi</div>
+          </div>
+          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
+        </div>
+        
+        <!-- KEMAMPUAN -->
         <div class="settings-menu-item" data-section="kemampuan" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
           <div style="width:36px; height:36px; background:#e0f2fe; border-radius:12px; display:flex; align-items:center; justify-content:center;">
             <i class="fas fa-microchip" style="color:#0284c7; font-size:18px;"></i>
           </div>
           <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Kemampuan 3 diaktifkan</div>
+            <div style="font-weight:500; color:#1a1a1a;">Kemampuan AI</div>
             <div style="font-size:11px; color:#9ca3af;">Normal, Faster, Code, Math</div>
           </div>
           <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
         </div>
         
-       <div class="settings-menu-item" data-section="konektor" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0; ${(currentUser && (currentUser.role === 'owner' || currentUser.role === 'PartnerOwner')) ? '' : 'display:none;'}">
-           <div style="width:36px; height:36px; background:#f3e8ff; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-               <i class="fas fa-plug" style="color:#9333ea; font-size:18px;"></i>
-           </div>
-           <div style="flex:1;">
-              <div style="font-weight:500; color:#1a1a1a;">Konektor</div>
-             <div style="font-size:11px; color:#9ca3af;">API Keys, Integrasi ${(currentUser && (currentUser.role === 'owner' || currentUser.role === 'PartnerOwner')) ? '' : '<span style="color:#dc2626;"> (Only Owner)</span>'}</div>
+        <!-- KONEKTOR (OWNER ONLY) -->
+        <div class="settings-menu-item" data-section="konektor" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0; ${(currentUser && (currentUser.role === 'owner' || currentUser.role === 'PartnerOwner')) ? '' : 'display:none;'}">
+          <div style="width:36px; height:36px; background:#f3e8ff; border-radius:12px; display:flex; align-items:center; justify-content:center;">
+            <i class="fas fa-plug" style="color:#9333ea; font-size:18px;"></i>
           </div>
-         <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-     </div>
+          <div style="flex:1;">
+            <div style="font-weight:500; color:#1a1a1a;">Konektor</div>
+            <div style="font-size:11px; color:#9ca3af;">API Keys, Integrasi</div>
+          </div>
+          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
+        </div>
         
         <!-- IZIN -->
         <div class="settings-menu-item" data-section="izin" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
@@ -1576,35 +1595,345 @@ function openSettings() {
   document.body.insertAdjacentHTML('beforeend', modalHtml);
   
   // Close button
-  document.getElementById("close-settings-btn").onclick = () => {
-    document.getElementById("settings-modal").remove();
-  };
+  const closeBtn = document.getElementById("close-settings-btn");
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      document.getElementById("settings-modal").remove();
+    };
+  }
   
   // Klik di luar modal
-  document.getElementById("settings-modal").onclick = (e) => {
-    if (e.target === document.getElementById("settings-modal")) {
-      document.getElementById("settings-modal").remove();
-    }
-  };
+  const modalBg = document.getElementById("settings-modal");
+  if (modalBg) {
+    modalBg.onclick = (e) => {
+      if (e.target === modalBg) modalBg.remove();
+    };
+  }
   
-  // Menu item handlers
-  document.querySelectorAll('.settings-menu-item').forEach(item => {
+  // Menu item handlers (termasuk notifai)
+  document.querySelectorAll('.settings-menu-item[data-section]').forEach(item => {
     item.onclick = () => {
       const section = item.dataset.section;
-      if (section) {
+      if (section === 'notifai') {
+        showNotificationAIPanel();
+      } else if (section) {
         showSettingsDetail(section);
       }
     };
   });
   
   // Logout handler
-  document.getElementById("logout-menu-item").onclick = () => {
-    if (confirm("Yakin mau keluar, goblok?")) {
-      document.getElementById("settings-modal").remove();
-      logout();
+  const logoutItem = document.getElementById("logout-menu-item");
+  if (logoutItem) {
+    logoutItem.onclick = () => {
+      if (confirm("Yakin mau keluar, goblok?")) {
+        document.getElementById("settings-modal").remove();
+        logout();
+      }
+    };
+  }
+}
+
+// ========== NOTIFICATION AI PANEL (REAL IMPLEMENTATION) ==========
+function showNotificationAIPanel() {
+  // Hapus modal lama
+  const oldModal = document.getElementById("settings-modal");
+  if (oldModal) oldModal.remove();
+  
+  const isEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
+  const notifPermission = Notification.permission;
+  
+  const modalHtml = `
+  <div id="settings-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
+    <div style="background:#ffffff; border-radius:32px; width:90%; max-width:420px; max-height:85vh; overflow-y:auto; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
+      
+      <!-- Header dengan gradient ungu -->
+      <div style="background:linear-gradient(135deg, #667eea, #764ba2); padding:20px 24px; text-align:center;">
+        <div style="width:60px; height:60px; background:rgba(255,255,255,0.2); border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+          <i class="fas fa-bell" style="font-size:28px; color:white;"></i>
+        </div>
+        <h3 style="margin:0; color:white; font-size:20px; font-weight:700;">Notifikasi AI</h3>
+        <p style="margin:4px 0 0; color:rgba(255,255,255,0.8); font-size:12px;">Aktifkan AI untuk membantu dari notifikasi</p>
+      </div>
+      
+      <div style="padding:24px;">
+        
+        <!-- Status Izin Notifikasi -->
+        <div style="background:#f9f9f9; border-radius:16px; padding:16px; margin-bottom:20px; border:1px solid #e5e5e5;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <i class="fas fa-shield-alt" style="color:#2d6a4f; font-size:18px;"></i>
+            <div style="flex:1;">
+              <div style="font-weight:600; color:#1a1a1a; font-size:14px;">Izin Notifikasi Browser</div>
+              <div style="font-size:11px; color:#9ca3af;">Status: <span id="notif-permission-status" style="color:${notifPermission === 'granted' ? '#2d6a4f' : '#dc2626'};">${notifPermission === 'granted' ? '✅ Diizinkan' : (notifPermission === 'denied' ? '❌ Diblokir' : '⏳ Belum diset')}</span></div>
+            </div>
+            ${notifPermission !== 'granted' ? '<button id="request-notif-permission" style="background:#2d6a4f; border:none; border-radius:40px; padding:8px 16px; color:white; font-size:11px; cursor:pointer;">Izinkan</button>' : ''}
+          </div>
+          <div class="notification-hint" style="font-size:10px; color:#6b6b6b; padding-top:8px; border-top:1px solid #e5e5e5;">
+            <i class="fas fa-info-circle"></i> Notifikasi diperlukan agar AI bisa menjawab pertanyaanmu
+          </div>
+        </div>
+        
+        <!-- Toggle Aktifasi Notif AI -->
+        <div style="background:#f9f9f9; border-radius:16px; padding:16px; margin-bottom:20px; border:1px solid #e5e5e5;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <i class="fas fa-microphone-alt" style="color:#667eea; font-size:20px;"></i>
+              <div>
+                <div style="font-weight:600; color:#1a1a1a; font-size:14px;">Aktifkan Notif AI</div>
+                <div style="font-size:10px; color:#9ca3af;">AI bisa dipanggil dari notifikasi</div>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notif-ai-toggle" ${isEnabled ? 'checked' : ''}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Preview Avatar AI -->
+        <div style="background:linear-gradient(135deg, #667eea15, #764ba215); border-radius:20px; padding:20px; text-align:center; margin-bottom:20px; border:1px solid rgba(102,126,234,0.2);">
+          <div style="width:80px; height:80px; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:30px; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; box-shadow:0 8px 20px rgba(102,126,234,0.3);">
+            <i class="fas fa-robot" style="font-size:40px; color:white;"></i>
+          </div>
+          <div style="font-weight:700; font-size:16px; color:#1a1a1a;">HIROKO AI</div>
+          <div style="font-size:11px; color:#667eea;">Assistant by KawakiModss</div>
+          <div style="margin-top:12px; font-size:10px; color:#6b6b6b;">
+            <i class="fas fa-circle" style="color:#4ade80; font-size:8px; margin-right:4px;"></i> Siap membantu
+          </div>
+        </div>
+        
+        <!-- Cara Penggunaan -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:600; margin-bottom:8px; font-size:13px; color:#1a1a1a;">
+            <i class="fas fa-question-circle"></i> Cara Menggunakan Notif AI:
+          </div>
+          <div style="background:#f9f9f9; border-radius:12px; padding:12px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">1</div>
+              <span style="font-size:12px; color:#1a1a1a;">Aktifkan toggle di atas</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">2</div>
+              <span style="font-size:12px; color:#1a1a1a;">Tutup browser / beralih ke aplikasi lain</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">3</div>
+              <span style="font-size:12px; color:#1a1a1a;">Klik notifikasi untuk kembali ke chat HIROKO</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">4</div>
+              <span style="font-size:12px; color:#1a1a1a;">Atau kirim pertanyaan lewat notifikasi reply</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Test Notifikasi -->
+        <button id="test-notif-ai-btn" style="width:100%; background:linear-gradient(135deg, #667eea, #764ba2); border:none; border-radius:40px; padding:14px; color:white; font-weight:600; font-size:14px; cursor:pointer; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="fas fa-paper-plane"></i> Kirim Notifikasi Test
+        </button>
+        
+        <!-- Tombol Kembali -->
+        <button id="back-to-settings" style="width:100%; background:#f0f0f0; border:1px solid #e5e5e5; border-radius:40px; padding:12px; color:#1a1a1a; font-weight:500; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="fas fa-arrow-left"></i> Kembali ke Pengaturan
+        </button>
+        
+      </div>
+    </div>
+  </div>
+  
+  
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  
+  // Request permission button
+  const requestPermBtn = document.getElementById("request-notif-permission");
+  if (requestPermBtn) {
+    requestPermBtn.onclick = async () => {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        showToast("✅ Izin notifikasi diberikan! Sekarang Notif AI bisa aktif.", false);
+        // Refresh panel
+        showNotificationAIPanel();
+      } else {
+        showToast("❌ Izin notifikasi ditolak.", true);
+      }
+    };
+  }
+  
+  // Toggle Notif AI
+  const toggleNotif = document.getElementById("notif-ai-toggle");
+  if (toggleNotif) {
+    toggleNotif.onchange = (e) => {
+      const isChecked = e.target.checked;
+      localStorage.setItem('notif_ai_enabled', isChecked);
+      
+      const badge = document.getElementById("notif-ai-status-badge");
+      if (badge) {
+        badge.textContent = isChecked ? 'AKTIF' : 'NONAKTIF';
+        badge.style.background = isChecked ? '#e8f0e8' : '#fee2e2';
+        badge.style.color = isChecked ? '#2d6a4f' : '#dc2626';
+      }
+      
+      if (isChecked && Notification.permission !== 'granted') {
+        showToast("⚠️ Izin notifikasi belum diberikan! Klik 'Izinkan' dulu.", true);
+        e.target.checked = false;
+        localStorage.setItem('notif_ai_enabled', false);
+      } else if (isChecked) {
+        showToast("✅ Notif AI diaktifkan! HIROKO akan muncul di notifikasi.", false);
+      } else {
+        showToast("🔕 Notif AI dinonaktifkan.", false);
+      }
+    };
+  }
+  
+  // Test Notification Button (REAL)
+  const testBtn = document.getElementById("test-notif-ai-btn");
+  if (testBtn) {
+    testBtn.onclick = () => {
+      if (Notification.permission !== 'granted') {
+        showToast("❌ Izin notifikasi belum diberikan!", true);
+        return;
+      }
+      
+      const isNotifEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
+      if (!isNotifEnabled) {
+        showToast("⚠️ Aktifkan Notif AI dulu!", true);
+        return;
+      }
+      
+      // Tampilkan notifikasi real
+      const notification = new Notification("🔔 HIROKO AI Assistant", {
+        body: "Halo Tuan! Ada yang bisa saya bantu? Klik untuk chat!",
+        icon: "https://files.catbox.moe/defcsh.jpg",
+        badge: "https://files.catbox.moe/defcsh.jpg",
+        tag: "hiroko-test",
+        renotify: true,
+        requireInteraction: true,
+        data: {
+          url: window.location.href,
+          type: "hiroko-ai",
+          action: "open-chat"
+        }
+      });
+      
+      notification.onclick = (event) => {
+        event.preventDefault();
+        window.focus();
+        notification.close();
+        
+        // Fokus ke input chat
+        const msgInput = document.getElementById("msg-input");
+        if (msgInput) msgInput.focus();
+        showToast("✅ Kembali ke HIROKO!", false);
+      };
+      
+      showToast("✅ Notifikasi test terkirim! Cek notifikasi browser lo.", false);
+    };
+  }
+  
+  // Back button
+  const backBtn = document.getElementById("back-to-settings");
+  if (backBtn) {
+    backBtn.onclick = () => {
+      const modal = document.getElementById("settings-modal");
+      if (modal) modal.remove();
+      openSettings();
+    };
+  }
+  
+  // Klik di luar modal
+  const modalBgNotif = document.getElementById("settings-modal");
+  if (modalBgNotif) {
+    modalBgNotif.onclick = (e) => {
+      if (e.target === modalBgNotif) {
+        modalBgNotif.remove();
+        openSettings();
+      }
+    };
+  }
+}
+
+// ========== FUNGSI KIRIM NOTIFIKASI REAL DARI AI ==========
+function sendHirokoNotification(title, body, iconUrl = "https://files.catbox.moe/defcsh.jpg") {
+  if (!('Notification' in window)) {
+    console.log("Browser tidak support notifikasi");
+    return false;
+  }
+  
+  if (Notification.permission !== 'granted') {
+    console.log("Izin notifikasi belum diberikan");
+    return false;
+  }
+  
+  const isNotifAiEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
+  if (!isNotifAiEnabled) {
+    console.log("Notif AI belum diaktifkan di pengaturan");
+    return false;
+  }
+  
+  const notification = new Notification(title, {
+    body: body,
+    icon: iconUrl,
+    badge: iconUrl,
+    tag: "hiroko-ai-notification",
+    renotify: true,
+    requireInteraction: true,
+    data: {
+      type: "hiroko-ai",
+      timestamp: Date.now(),
+      action: "reply"
+    }
+  });
+  
+  notification.onclick = (event) => {
+    event.preventDefault();
+    window.focus();
+    notification.close();
+    
+    // Buka chat dan fokus
+    const msgInput = document.getElementById("msg-input");
+    if (msgInput) {
+      msgInput.focus();
+      showToast("💬 Kembali ke HIROKO! Ketik pertanyaanmu.", false);
     }
   };
+  
+  return true;
 }
+
+// ========== OVERRIDE APPENDBUBBLE UNTUK TRIGGER NOTIFIKASI ==========
+const originalAppendBubbleNotif = window.appendBubbleWithTyping;
+if (originalAppendBubbleNotif) {
+  window.appendBubbleWithTyping = async function(role, fullText, mode, scroll = true) {
+    const result = await originalAppendBubbleNotif(role, fullText, mode, scroll);
+    
+    // Kirim notifikasi kalo lagi gak fokus ke tab dan role AI
+    if (role === "ai" && document.hidden && fullText && fullText.length > 10) {
+      const isNotifEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
+      if (isNotifEnabled && Notification.permission === 'granted') {
+        sendHirokoNotification(
+          "🤖 HIROKO Membalas",
+          fullText.substring(0, 100) + (fullText.length > 100 ? "..." : ""),
+          "https://files.catbox.moe/defcsh.jpg"
+        );
+      }
+    }
+    
+    return result;
+  };
+}
+
+// Auto refresh badge saat halaman load
+document.addEventListener('DOMContentLoaded', () => {
+  const badge = document.getElementById("notif-ai-status-badge");
+  if (badge) {
+    const isEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
+    badge.textContent = isEnabled ? 'AKTIF' : 'NONAKTIF';
+    badge.style.background = isEnabled ? '#e8f0e8' : '#fee2e2';
+    badge.style.color = isEnabled ? '#2d6a4f' : '#dc2626';
+  }
+});
 
 // ========== FUNGSI DETAIL SETTINGS (SUB-MENU) ==========
 function showSettingsDetail(section) {
