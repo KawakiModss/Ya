@@ -17,6 +17,46 @@ async function callGeminiWithSystemPrompt(messages, mode) {
   return await callGemini(formattedMessages, mode);
 }
 
+// CEK URL PARAMETER SAAT LOAD
+function checkForReplyMode() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get('mode');
+  const questionId = urlParams.get('questionId');
+  
+  if (mode === 'reply') {
+    console.log('💬 Reply mode detected! Question ID:', questionId);
+    
+    // FOKUS KE INPUT
+    setTimeout(() => {
+      const msgInput = document.getElementById('msg-input');
+      if (msgInput) {
+        msgInput.focus();
+        showToast('💬 Ketik balasanmu untuk HIROKO...', false);
+        
+        // OPSIONAL: TAMPILIN PROMPT KECIL
+        const replyHint = document.createElement('div');
+        replyHint.className = 'reply-hint';
+        replyHint.innerHTML = `
+          <div style="background: #2d6a4f; color: white; padding: 8px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 12px;">
+            <i class="fas fa-reply"></i> Balas notifikasi HIROKO...
+          </div>
+        `;
+        const chat = document.getElementById('chat');
+        if (chat && !document.querySelector('.reply-hint')) {
+          chat.insertBefore(replyHint, chat.firstChild);
+          setTimeout(() => replyHint.remove(), 3000);
+        }
+      }
+    }, 500);
+    
+    // HAPUS PARAMETER DARI URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
+// PANGGIL SAAT LOAD
+document.addEventListener('DOMContentLoaded', checkForReplyMode);
+
 // ========== VOICE CHAT REALTIME (LANGSUNG JAWAB PAKE SUARA) ==========
 let recognitionRealtime = null;
 let isRealtimeListening = false;
