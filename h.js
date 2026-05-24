@@ -483,9 +483,9 @@ const FREE_LIMIT = 40;
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions";
 const MODELS = {
-  normal: { api: "groq", models: ["llama-3.3-70b-versatile", "llama3-8b-8192"] }, { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] }, { api: "claude", models: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"] },
-  faster: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] }, { api: "claude", models: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"] }, { api: "groq", models: ["llama-3.3-70b-versatile", "llama3-8b-8192"] },
-  code: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] }, { api: "claude", models: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"] }, { api: "groq", models: ["llama-
+  normal: { api: "groq", models: ["llama-3.3-70b-versatile", "llama3-8b-8192"] },
+  faster: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] },
+  code: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] }, 
   math: { api: "claude", models: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"] },
 };
 
