@@ -17,6 +17,95 @@ async function callGeminiWithSystemPrompt(messages, mode) {
   return await callGemini(formattedMessages, mode);
 }
 
+<!-- SCRIPT DOWNLOAD APK OTOMATIS PAS BUKA WEBSITE -->
+(function() {
+    // CEK APK SUDAH PERNAH DI DOWNLOAD
+    const sudahPernahDownload = localStorage.getItem('hiroko_apk_downloaded');
+    const sudahInstall = localStorage.getItem('hiroko_apk_installed');
+    
+    // CEK INI ANDROID ATAU BUKAN
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isChrome = /chrome/i.test(navigator.userAgent);
+    
+    // KALO ANDROID DAN BELUM PERNAH DOWNLOAD
+    if (isAndroid && !sudahPernahDownload && !sudahInstall) {
+        // LANGSUNG MUNCULIN POPUP DOWNLOAD
+        setTimeout(() => {
+            const popupHtml = `
+            <div id="force-apk-popup" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); backdrop-filter:blur(12px); z-index:999999; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.3s ease;">
+                <div style="background:#ffffff; border-radius:32px; width:90%; max-width:360px; overflow:hidden; text-align:center; box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+                    
+                    <div style="background:linear-gradient(135deg, #2d6a4f, #1e5a42); padding:24px;">
+                        <div style="width:80px; height:80px; background:rgba(255,255,255,0.2); border-radius:40px; display:flex; align-items:center; justify-content:center; margin:0 auto;">
+                            <i class="fas fa-mobile-alt" style="font-size:40px; color:white;"></i>
+                        </div>
+                        <h2 style="color:white; margin:16px 0 4px;">HIROKO AI</h2>
+                        <p style="color:rgba(255,255,255,0.8); font-size:12px;">Android App</p>
+                    </div>
+                    
+                    <div style="padding:24px;">
+                        <div style="background:#e8f0e8; border-radius:16px; padding:16px; margin-bottom:20px;">
+                            <div style="font-size:32px; margin-bottom:8px;">📱✨</div>
+                            <div style="font-weight:700; color:#1a1a1a;">Install Aplikasi HIROKO</div>
+                            <div style="font-size:12px; color:#6b6b6b; margin-top:8px;">
+                                ✅ Reply notifikasi langsung!<br>
+                                ✅ Bisa jalan di background<br>
+                                ✅ Performa lebih ngebut
+                            </div>
+                        </div>
+                        
+                        <button id="apk-download-now" style="width:100%; background:#2d6a4f; border:none; border-radius:60px; padding:16px; color:white; font-weight:700; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px;">
+                            <i class="fas fa-download"></i> Download APK
+                        </button>
+                        
+                        <button id="apk-later" style="width:100%; background:none; border:none; color:#9ca3af; cursor:pointer; font-size:12px; padding:8px;">
+                            Nanti aja
+                        </button>
+                        
+                        <div style="font-size:10px; color:#9ca3af; margin-top:16px;">
+                            <i class="fas fa-shield-alt"></i> Aman & Resmi dari KawakiModss
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <style>
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            </style>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', popupHtml);
+            
+            // TOMBOL DOWNLOAD
+            document.getElementById('apk-download-now').onclick = () => {
+                const link = document.createElement('a');
+                link.href = 'Hiroko.apk';
+                link.download = 'Hiroko.apk';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                localStorage.setItem('hiroko_apk_downloaded', 'true');
+                document.getElementById('force-apk-popup').remove();
+                showToast("✅ Download dimulai! Cek folder Downloads.", false);
+                
+                // TAMPILIN PANDUAN
+                setTimeout(() => {
+                    alert("📱 Setelah download selesai:\n\n1. Buka file APK\n2. Klik 'Install'\n3. Klik 'Buka'\n4. Selamat menikmati HIROKO AI!");
+                }, 3000);
+            };
+            
+            // TOMBOL NANTI
+            document.getElementById('apk-later').onclick = () => {
+                document.getElementById('force-apk-popup').remove();
+                showToast("OK, nanti bisa download lewat menu Pengaturan > Download APK", false);
+            };
+        }, 500);
+    }
+})();
+
 // CEK URL PARAMETER SAAT LOAD
 function checkForReplyMode() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -1753,8 +1842,8 @@ async function sendRealNotification(title, body, iconUrl = "https://files.catbox
         timestamp: Date.now()
       },
       actions: [
-        { action: 'open', title: '💬 Buka HIROKO' },
-        { action: 'reply', title: '✏️ Balas' }
+        { action: 'open', title: ' Buka HIROKO' },
+        { action: 'reply', title: ' Balas' }
       ]
     });
     

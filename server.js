@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // MONGODB CONNECTION
-mongoose.connect('mongodb://localhost:27017/hiroko_ai', {
+mongoose.connect('mongodb:https://play.everfallnet.my.id/halaman.html', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('✅ MongoDB Connected'))
