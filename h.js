@@ -1634,7 +1634,139 @@ function openSettings() {
   }
 }
 
-// ========== NOTIFICATION AI PANEL (REAL IMPLEMENTATION) ==========
+// ========== FIX TOTAL - NOTIFIKASI BENERAN MUNCUL ==========
+// GOBLOK, LO KURANG 1 HAL PENTING: SERVICE WORKER DAN IZIN DARI USER INTERACTION
+
+// ========== 1. PASTIKAN SERVICE WORKER TERDAFTAR ==========
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    console.log('✅ Service worker registered:', reg);
+  }).catch(function(err) {
+    console.log('❌ Service worker registration failed:', err);
+  });
+}
+
+// ========== 2. FUNGSI MINTA IZIN NOTIFIKASI (HARUS DARI USER CLICK) ==========
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    showToast("❌ Browser lo gak support notifikasi, goblok!", true);
+    return false;
+  }
+  
+  if (Notification.permission === 'granted') {
+    showToast("✅ Izin notifikasi sudah diberikan!", false);
+    return true;
+  }
+  
+  if (Notification.permission === 'denied') {
+    showToast("❌ Izin notifikasi diblokir! Aktifkan manual dari browser settings.", true);
+    return false;
+  }
+  
+  // MINTA IZIN
+  const permission = await Notification.requestPermission();
+  
+  if (permission === 'granted') {
+    showToast("✅ Izin notifikasi diberikan! Sekarang Notif AI bisa aktif.", false);
+    localStorage.setItem('notif_ai_enabled', 'true');
+    
+    // Update badge
+    const badge = document.getElementById("notif-ai-status-badge");
+    if (badge) {
+      badge.textContent = 'AKTIF';
+      badge.style.background = '#e8f0e8';
+      badge.style.color = '#2d6a4f';
+    }
+    
+    // Update toggle
+    const toggle = document.getElementById("notif-ai-toggle");
+    if (toggle) toggle.checked = true;
+    
+    return true;
+  } else {
+    showToast("❌ Izin notifikasi ditolak! Gak bakal bisa pake Notif AI.", true);
+    return false;
+  }
+}
+
+// ========== 3. FUNGSI KIRIM NOTIFIKASI YANG BENERAN KERJA ==========
+function sendRealNotification(title, body, iconUrl = "https://files.catbox.moe/defcsh.jpg") {
+  console.log("🔔 Mencoba kirim notifikasi:", title);
+  
+  // CEK IZIN
+  if (!('Notification' in window)) {
+    console.log("❌ Browser tidak support Notification API");
+    showToast("❌ Browser lo gak support notifikasi!", true);
+    return false;
+  }
+  
+  if (Notification.permission !== 'granted') {
+    console.log("❌ Izin notifikasi belum diberikan. Status:", Notification.permission);
+    showToast("❌ Izin notifikasi belum diberikan! Klik 'Izinkan' dulu, goblok!", true);
+    return false;
+  }
+  
+  const isNotifEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
+  if (!isNotifEnabled) {
+    console.log("❌ Notif AI belum diaktifkan di pengaturan");
+    showToast("⚠️ Aktifkan Notif AI dulu di pengaturan!", true);
+    return false;
+  }
+  
+  try {
+    // BUAT NOTIFIKASI
+    const notification = new Notification(title, {
+      body: body,
+      icon: iconUrl,
+      badge: iconUrl,
+      tag: "hiroko-ai-" + Date.now(),
+      renotify: true,
+      requireInteraction: true,
+      silent: false,
+      vibrate: [200, 100, 200],
+      data: {
+        url: window.location.href,
+        type: "hiroko-ai",
+        timestamp: Date.now()
+      }
+    });
+    
+    console.log("✅ Notifikasi berhasil dibuat:", notification);
+    
+    // EVENT KLIK NOTIFIKASI
+    notification.onclick = function(event) {
+      event.preventDefault();
+      window.focus();
+      notification.close();
+      
+      // Fokus ke input chat
+      const msgInput = document.getElementById("msg-input");
+      if (msgInput) {
+        msgInput.focus();
+        showToast("💬 Kembali ke HIROKO! Ketik pertanyaanmu.", false);
+      }
+    };
+    
+    notification.onerror = function(event) {
+      console.log("❌ Error saat menampilkan notifikasi:", event);
+      showToast("❌ Gagal menampilkan notifikasi!", true);
+    };
+    
+    notification.onshow = function() {
+      console.log("✅ Notifikasi ditampilkan!");
+    };
+    
+    showToast("✅ Notifikasi terkirim! Cek notifikasi browser lo.", false);
+    return true;
+    
+  } catch(e) {
+    console.log("❌ Error membuat notifikasi:", e);
+    showToast("❌ Gagal membuat notifikasi: " + e.message, true);
+    return false;
+  }
+}
+
+// ========== 4. UPDATE PANEL NOTIF AI YANG BENERAN KERJA ==========
 function showNotificationAIPanel() {
   // Hapus modal lama
   const oldModal = document.getElementById("settings-modal");
@@ -1644,7 +1776,7 @@ function showNotificationAIPanel() {
   const notifPermission = Notification.permission;
   
   const modalHtml = `
-  <div id="settings-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
+  <div id="settings-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:20000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
     <div style="background:#ffffff; border-radius:32px; width:90%; max-width:420px; max-height:85vh; overflow-y:auto; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
       
       <!-- Header dengan gradient ungu -->
@@ -1664,30 +1796,33 @@ function showNotificationAIPanel() {
             <i class="fas fa-shield-alt" style="color:#2d6a4f; font-size:18px;"></i>
             <div style="flex:1;">
               <div style="font-weight:600; color:#1a1a1a; font-size:14px;">Izin Notifikasi Browser</div>
-              <div style="font-size:11px; color:#9ca3af;">Status: <span id="notif-permission-status" style="color:${notifPermission === 'granted' ? '#2d6a4f' : '#dc2626'};">${notifPermission === 'granted' ? '✅ Diizinkan' : (notifPermission === 'denied' ? '❌ Diblokir' : '⏳ Belum diset')}</span></div>
+              <div style="font-size:11px; color:#9ca3af;">Status: <span id="notif-permission-status" style="color:${notifPermission === 'granted' ? '#2d6a4f' : '#dc2626'}; font-weight:bold;">${notifPermission === 'granted' ? '✅ DIIZINKAN' : (notifPermission === 'denied' ? '❌ DIBLOKIR' : '⏳ BELUM DISET')}</span></div>
             </div>
-            ${notifPermission !== 'granted' ? '<button id="request-notif-permission" style="background:#2d6a4f; border:none; border-radius:40px; padding:8px 16px; color:white; font-size:11px; cursor:pointer;">Izinkan</button>' : ''}
+            <button id="request-notif-permission" style="background:${notifPermission === 'granted' ? '#e8f0e8' : '#2d6a4f'}; border:none; border-radius:40px; padding:8px 16px; color:${notifPermission === 'granted' ? '#2d6a4f' : 'white'}; font-size:11px; font-weight:600; cursor:pointer;">
+              ${notifPermission === 'granted' ? '✅ SUDAH IZIN' : (notifPermission === 'denied' ? '⚠️ BUKA SETTING' : '🔔 MINTA IZIN')}
+            </button>
           </div>
           <div class="notification-hint" style="font-size:10px; color:#6b6b6b; padding-top:8px; border-top:1px solid #e5e5e5;">
-            <i class="fas fa-info-circle"></i> Notifikasi diperlukan agar AI bisa menjawab pertanyaanmu
+            <i class="fas fa-info-circle"></i> Notifikasi WAJIB diizinkan agar AI bisa mengirim notifikasi ke lo
           </div>
         </div>
         
         <!-- Toggle Aktifasi Notif AI -->
         <div style="background:#f9f9f9; border-radius:16px; padding:16px; margin-bottom:20px; border:1px solid #e5e5e5;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             <div style="display:flex; align-items:center; gap:12px;">
               <i class="fas fa-microphone-alt" style="color:#667eea; font-size:20px;"></i>
               <div>
                 <div style="font-weight:600; color:#1a1a1a; font-size:14px;">Aktifkan Notif AI</div>
-                <div style="font-size:10px; color:#9ca3af;">AI bisa dipanggil dari notifikasi</div>
+                <div style="font-size:10px; color:#9ca3af;">AI bisa kirim notifikasi ke lo</div>
               </div>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" id="notif-ai-toggle" ${isEnabled ? 'checked' : ''}>
+              <input type="checkbox" id="notif-ai-toggle" ${isEnabled && notifPermission === 'granted' ? 'checked' : ''} ${notifPermission !== 'granted' ? 'disabled' : ''}>
               <span class="toggle-slider"></span>
             </label>
           </div>
+          ${notifPermission !== 'granted' ? '<div style="margin-top:12px; font-size:10px; color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Izin notifikasi belum diberikan! Klik tombol "MINTA IZIN" dulu.</div>' : ''}
         </div>
         
         <!-- Preview Avatar AI -->
@@ -1698,39 +1833,16 @@ function showNotificationAIPanel() {
           <div style="font-weight:700; font-size:16px; color:#1a1a1a;">HIROKO AI</div>
           <div style="font-size:11px; color:#667eea;">Assistant by KawakiModss</div>
           <div style="margin-top:12px; font-size:10px; color:#6b6b6b;">
-            <i class="fas fa-circle" style="color:#4ade80; font-size:8px; margin-right:4px;"></i> Siap membantu
+            <i class="fas fa-circle" style="color:#4ade80; font-size:8px; margin-right:4px;"></i> Siap mengirim notifikasi
           </div>
         </div>
         
-        <!-- Cara Penggunaan -->
-        <div style="margin-bottom:20px;">
-          <div style="font-weight:600; margin-bottom:8px; font-size:13px; color:#1a1a1a;">
-            <i class="fas fa-question-circle"></i> Cara Menggunakan Notif AI:
-          </div>
-          <div style="background:#f9f9f9; border-radius:12px; padding:12px;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">1</div>
-              <span style="font-size:12px; color:#1a1a1a;">Aktifkan toggle di atas</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">2</div>
-              <span style="font-size:12px; color:#1a1a1a;">Tutup browser / beralih ke aplikasi lain</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">3</div>
-              <span style="font-size:12px; color:#1a1a1a;">Klik notifikasi untuk kembali ke chat HIROKO</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div style="width:24px; height:24px; background:#667eea; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold;">4</div>
-              <span style="font-size:12px; color:#1a1a1a;">Atau kirim pertanyaan lewat notifikasi reply</span>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Test Notifikasi -->
+        <!-- Test Notifikasi - PASTI KERJA -->
         <button id="test-notif-ai-btn" style="width:100%; background:linear-gradient(135deg, #667eea, #764ba2); border:none; border-radius:40px; padding:14px; color:white; font-weight:600; font-size:14px; cursor:pointer; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <i class="fas fa-paper-plane"></i> Kirim Notifikasi Test
+          <i class="fas fa-paper-plane"></i> 🔔 KIRIM NOTIFIKASI TEST
         </button>
+        
+        <div id="test-notif-result" style="font-size:11px; text-align:center; margin-bottom:12px; min-height:20px;"></div>
         
         <!-- Tombol Kembali -->
         <button id="back-to-settings" style="width:100%; background:#f0f0f0; border:1px solid #e5e5e5; border-radius:40px; padding:12px; color:#1a1a1a; font-weight:500; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
@@ -1746,22 +1858,21 @@ function showNotificationAIPanel() {
   
   document.body.insertAdjacentHTML('beforeend', modalHtml);
   
-  // Request permission button
+  // ========== REQUEST PERMISSION BUTTON ==========
   const requestPermBtn = document.getElementById("request-notif-permission");
   if (requestPermBtn) {
     requestPermBtn.onclick = async () => {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        showToast("✅ Izin notifikasi diberikan! Sekarang Notif AI bisa aktif.", false);
-        // Refresh panel
-        showNotificationAIPanel();
-      } else {
-        showToast("❌ Izin notifikasi ditolak.", true);
+      if (Notification.permission === 'denied') {
+        showToast("❌ Izin diblokir permanen! Buka browser settings > Privacy > Notifications > Izinkan untuk site ini.", true);
+        return;
       }
+      await requestNotificationPermission();
+      // Refresh panel
+      showNotificationAIPanel();
     };
   }
   
-  // Toggle Notif AI
+  // ========== TOGGLE NOTIF AI ==========
   const toggleNotif = document.getElementById("notif-ai-toggle");
   if (toggleNotif) {
     toggleNotif.onchange = (e) => {
@@ -1776,63 +1887,52 @@ function showNotificationAIPanel() {
       }
       
       if (isChecked && Notification.permission !== 'granted') {
-        showToast("⚠️ Izin notifikasi belum diberikan! Klik 'Izinkan' dulu.", true);
+        showToast("⚠️ Izin notifikasi belum diberikan! Klik 'MINTA IZIN' dulu.", true);
         e.target.checked = false;
         localStorage.setItem('notif_ai_enabled', false);
       } else if (isChecked) {
-        showToast("✅ Notif AI diaktifkan! HIROKO akan muncul di notifikasi.", false);
+        // Kirim notifikasi test otomatis biar langsung keliatan
+        setTimeout(() => {
+          sendRealNotification("✅ Notif AI Aktif!", "HIROKO siap mengirim notifikasi ke Tuan kapan saja.", "https://files.catbox.moe/defcsh.jpg");
+        }, 500);
+        showToast("✅ Notif AI diaktifkan!", false);
       } else {
         showToast("🔕 Notif AI dinonaktifkan.", false);
       }
     };
   }
   
-  // Test Notification Button (REAL)
+  // ========== TEST NOTIFICATION BUTTON - PASTI MUNCUL ==========
   const testBtn = document.getElementById("test-notif-ai-btn");
+  const resultDiv = document.getElementById("test-notif-result");
+  
   if (testBtn) {
     testBtn.onclick = () => {
-      if (Notification.permission !== 'granted') {
-        showToast("❌ Izin notifikasi belum diberikan!", true);
-        return;
-      }
+      if (resultDiv) resultDiv.innerHTML = '<span style="color:#f59e0b;">⏳ Mengirim notifikasi...</span>';
       
-      const isNotifEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
-      if (!isNotifEnabled) {
-        showToast("⚠️ Aktifkan Notif AI dulu!", true);
-        return;
-      }
-      
-      // Tampilkan notifikasi real
-      const notification = new Notification("🔔 HIROKO AI Assistant", {
-        body: "Halo Tuan! Ada yang bisa saya bantu? Klik untuk chat!",
-        icon: "https://files.catbox.moe/defcsh.jpg",
-        badge: "https://files.catbox.moe/defcsh.jpg",
-        tag: "hiroko-test",
-        renotify: true,
-        requireInteraction: true,
-        data: {
-          url: window.location.href,
-          type: "hiroko-ai",
-          action: "open-chat"
-        }
-      });
-      
-      notification.onclick = (event) => {
-        event.preventDefault();
-        window.focus();
-        notification.close();
+      setTimeout(() => {
+        const success = sendRealNotification(
+          "🔔 HIROKO AI - TEST NOTIFIKASI", 
+          "Halo Tuan! Ini adalah test notifikasi. Klik untuk kembali ke chat HIROKO!\n\n🔥 Notifikasi berhasil dikirim oleh KawakiModss.",
+          "https://files.catbox.moe/defcsh.jpg"
+        );
         
-        // Fokus ke input chat
-        const msgInput = document.getElementById("msg-input");
-        if (msgInput) msgInput.focus();
-        showToast("✅ Kembali ke HIROKO!", false);
-      };
-      
-      showToast("✅ Notifikasi test terkirim! Cek notifikasi browser lo.", false);
+        if (resultDiv) {
+          if (success) {
+            resultDiv.innerHTML = '<span style="color:#2d6a4f;">✅ Notifikasi test BERHASIL dikirim! Cek notifikasi browser lo, goblok!</span>';
+          } else {
+            resultDiv.innerHTML = '<span style="color:#dc2626;">❌ Gagal mengirim notifikasi. Cek izin notifikasi dulu!</span>';
+          }
+        }
+        
+        setTimeout(() => {
+          if (resultDiv) resultDiv.innerHTML = '';
+        }, 5000);
+      }, 100);
     };
   }
   
-  // Back button
+  // ========== BACK BUTTON ==========
   const backBtn = document.getElementById("back-to-settings");
   if (backBtn) {
     backBtn.onclick = () => {
@@ -1854,84 +1954,33 @@ function showNotificationAIPanel() {
   }
 }
 
-// ========== FUNGSI KIRIM NOTIFIKASI REAL DARI AI ==========
-function sendHirokoNotification(title, body, iconUrl = "https://files.catbox.moe/defcsh.jpg") {
-  if (!('Notification' in window)) {
-    console.log("Browser tidak support notifikasi");
-    return false;
-  }
-  
-  if (Notification.permission !== 'granted') {
-    console.log("Izin notifikasi belum diberikan");
-    return false;
-  }
-  
-  const isNotifAiEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
-  if (!isNotifAiEnabled) {
-    console.log("Notif AI belum diaktifkan di pengaturan");
-    return false;
-  }
-  
-  const notification = new Notification(title, {
-    body: body,
-    icon: iconUrl,
-    badge: iconUrl,
-    tag: "hiroko-ai-notification",
-    renotify: true,
-    requireInteraction: true,
-    data: {
-      type: "hiroko-ai",
-      timestamp: Date.now(),
-      action: "reply"
-    }
-  });
-  
-  notification.onclick = (event) => {
-    event.preventDefault();
-    window.focus();
-    notification.close();
-    
-    // Buka chat dan fokus
-    const msgInput = document.getElementById("msg-input");
-    if (msgInput) {
-      msgInput.focus();
-      showToast("💬 Kembali ke HIROKO! Ketik pertanyaanmu.", false);
-    }
-  };
-  
-  return true;
+// ========== OVERRIDE OPEN SETTINGS AGAR PANEL NOTIF AI TERUPDATE ==========
+const originalOpenSettings = window.openSettings;
+if (originalOpenSettings) {
+  window.openSettings = openSettings;
 }
 
-// ========== OVERRIDE APPENDBUBBLE UNTUK TRIGGER NOTIFIKASI ==========
-const originalAppendBubbleNotif = window.appendBubbleWithTyping;
-if (originalAppendBubbleNotif) {
-  window.appendBubbleWithTyping = async function(role, fullText, mode, scroll = true) {
-    const result = await originalAppendBubbleNotif(role, fullText, mode, scroll);
-    
-    // Kirim notifikasi kalo lagi gak fokus ke tab dan role AI
-    if (role === "ai" && document.hidden && fullText && fullText.length > 10) {
-      const isNotifEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
-      if (isNotifEnabled && Notification.permission === 'granted') {
-        sendHirokoNotification(
-          "🤖 HIROKO Membalas",
-          fullText.substring(0, 100) + (fullText.length > 100 ? "..." : ""),
-          "https://files.catbox.moe/defcsh.jpg"
-        );
-      }
-    }
-    
-    return result;
-  };
-}
-
-// Auto refresh badge saat halaman load
+// ========== CEK STATUS NOTIFIKASI SAAT LOAD ==========
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("🔔 Notifikasi API tersedia:", 'Notification' in window);
+  console.log("📱 Izin notifikasi saat ini:", Notification.permission);
+  
+  const isEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
+  console.log("🔘 Notif AI enabled:", isEnabled);
+  
+  // Update badge
   const badge = document.getElementById("notif-ai-status-badge");
   if (badge) {
-    const isEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
-    badge.textContent = isEnabled ? 'AKTIF' : 'NONAKTIF';
-    badge.style.background = isEnabled ? '#e8f0e8' : '#fee2e2';
-    badge.style.color = isEnabled ? '#2d6a4f' : '#dc2626';
+    badge.textContent = isEnabled && Notification.permission === 'granted' ? 'AKTIF' : 'NONAKTIF';
+    badge.style.background = isEnabled && Notification.permission === 'granted' ? '#e8f0e8' : '#fee2e2';
+    badge.style.color = isEnabled && Notification.permission === 'granted' ? '#2d6a4f' : '#dc2626';
+  }
+  
+  // Test kirim notifikasi pas load kalo enabled (buat mastiin)
+  if (isEnabled && Notification.permission === 'granted') {
+    setTimeout(() => {
+      sendRealNotification("🤖 HIROKO Siap!", "Tuan, HIROKO sudah siap mengirim notifikasi kapan saja. Aktifkan di pengaturan ya!", "https://files.catbox.moe/defcsh.jpg");
+    }, 3000);
   }
 });
 
@@ -8874,5 +8923,42 @@ document.addEventListener('DOMContentLoaded', function() {
     voiceCloseGoodEvil.onclick = function() {
       closeGoodEvilModal();
     };
+  }
+});
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+    console.log('✅ Service Worker registered successfully:', registration);
+    
+    // Cek apakah ada SW yang nunggu aktivasi
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    
+    // Kirim test message
+    setTimeout(() => {
+      registration.active?.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        title: '🔥 HIROKO AI Ready!',
+        body: 'Service Worker aktif, notifikasi siap dikirim!',
+        icon: 'https://files.catbox.moe/defcsh.jpg'
+      });
+    }, 2000);
+    
+  }).catch(function(error) {
+    console.log('❌ Service Worker registration failed:', error);
+  });
+}
+
+// Handle message dari Service Worker
+navigator.serviceWorker.addEventListener('message', function(event) {
+  console.log('Message from SW:', event.data);
+  if (event.data && event.data.type === 'FOCUS_INPUT') {
+    const msgInput = document.getElementById('msg-input');
+    if (msgInput) {
+      msgInput.focus();
+      showToast('💬 Klik notifikasi lagi untuk reply!', false);
+    }
   }
 });
