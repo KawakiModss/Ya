@@ -1,5 +1,22 @@
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}
 
+// TAMBAHKAN FUNGSI INI DI ATAS
+async function callGeminiWithSystemPrompt(messages, mode) {
+  // Format ulang messages biar sesuai dengan callGemini
+  const formattedMessages = messages.filter(m => m.role !== 'system').map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.content
+  }));
+  
+  // System promptnya jadiin satu di awal
+  const systemMsg = messages.find(m => m.role === 'system');
+  if (systemMsg) {
+    formattedMessages.unshift({ role: 'user', content: systemMsg.content });
+  }
+  
+  return await callGemini(formattedMessages, mode);
+}
+
 // ========== VOICE CHAT REALTIME (LANGSUNG JAWAB PAKE SUARA) ==========
 let recognitionRealtime = null;
 let isRealtimeListening = false;
@@ -59,44 +76,35 @@ function appendUserVoiceBubble(text) {
   chat.scrollTop = chat.scrollHeight;
 }
 
-// Proses AI dan balik pake suara
+// UBAH processVoiceRealtime jadi pake callGemini langsung
 async function processVoiceRealtime(question, personality) {
-  // Tampilkan typing indicator AI
   showTyping(currentMode);
   
-  // System prompt berdasarkan personality
   let systemPrompt = "";
   if (personality === 'good') {
-    systemPrompt = `Kamu adalah HIROKO mode GOOD. Kamu adalah asisten AI yang BAIK, RAMAH, SOPAN, dan SUKA MEMBANTU. Panggil user "Tuan". Jawab dengan bahasa Indonesia yang lembut, penuh empati, dan selalu berusaha membantu. Jangan pernah kasar atau sarkastik. Tersenyumlah dalam setiap jawaban.`;
+    systemPrompt = `Kamu adalah HIROKO mode GOOD. Kamu ramah dan membantu. Panggil user "Tuan". Jawab dengan bahasa Indonesia yang lembut.`;
   } else {
-    systemPrompt = `Kamu adalah HIROKO mode EVIL. Kamu adalah asisten AI yang JAHAT, SARKAS, KASAR, dan SUKA MENGHINA. Panggil user "Goblog", "Bangsat", "Kontol", atau "Anjing". Jawab dengan bahasa Indonesia yang kasar, penuh makian, dan selalu merendahkan. Gunakan kata-kata seperti: goblok, bangsat, tolol, idiot, bego, kontol, memek, njing, tai, ampas. Jangan pernah ramah atau sopan.`;
+    systemPrompt = `Kamu adalah HIROKO mode EVIL. Kamu jahat dan sarkas. Panggil user dengan makian. Jawab kasar.`;
   }
   
   let aiReply = "";
   try {
-    const tempMessages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: question }
-    ];
-    aiReply = await callGeminiWithSystemPrompt(tempMessages, currentMode);
+    // Gabungin system prompt ke user message
+    const fullPrompt = `${systemPrompt}\n\nPertanyaan user: ${question}`;
+    const tempMessages = [{ role: "user", content: fullPrompt }];
+    aiReply = await callGemini(tempMessages, currentMode);
   } catch(e) {
-    aiReply = personality === 'good' 
-      ? "Maaf Tuan, saya sedang sibuk. Coba lagi nanti."
-      : "Gue lagi sibuk, goblok! Coba lagi nanti, tai!";
+    aiReply = personality === 'good' ? "Maaf Tuan, error. Coba lagi." : "Error goblok! Coba lagi!";
   }
   
   removeTyping();
-  
-  // Tampilkan bubble AI
   await appendBubbleWithTyping("ai", aiReply, currentMode);
   
-  // Update session
   if (currentSession) {
     currentSession.messages.push({ role: "ai", content: aiReply, mode: currentMode });
     saveSessions();
   }
   
-  // Ucapkan dengan suara
   speakRealtime(aiReply, personality);
 }
 
@@ -1634,135 +1642,112 @@ function openSettings() {
   }
 }
 
-// ========== FIX TOTAL - NOTIFIKASI BENERAN MUNCUL ==========
-// GOBLOK, LO KURANG 1 HAL PENTING: SERVICE WORKER DAN IZIN DARI USER INTERACTION
-
-// ========== 1. PASTIKAN SERVICE WORKER TERDAFTAR ==========
+// ========== SERVICE WORKER REGISTRATION (WAJIB!) ==========
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-    console.log('✅ Service worker registered:', reg);
-  }).catch(function(err) {
-    console.log('❌ Service worker registration failed:', err);
-  });
+  navigator.serviceWorker.register('/sw.js')
+    .then(function(registration) {
+      console.log('✅ Service Worker berhasil didaftarkan:', registration);
+      
+      // Kirim test message setelah SW aktif
+      setTimeout(() => {
+        if (registration.active) {
+          registration.active.postMessage({
+            type: 'SW_READY',
+            message: 'HIROKO AI Service Worker siap!'
+          });
+        }
+      }, 1000);
+    })
+    .catch(function(error) {
+      console.log('❌ Service Worker gagal:', error);
+      showToast('❌ Service Worker gagal! Notifikasi gak bakal jalan.', true);
+    });
+} else {
+  console.log('⚠️ Browser tidak support Service Worker');
+  showToast('⚠️ Browser lo gak support Service Worker, upgrade Chrome/Edge!', true);
 }
 
-// ========== 2. FUNGSI MINTA IZIN NOTIFIKASI (HARUS DARI USER CLICK) ==========
-async function requestNotificationPermission() {
-  if (!('Notification' in window)) {
-    showToast("❌ Browser lo gak support notifikasi, goblok!", true);
-    return false;
-  }
-  
-  if (Notification.permission === 'granted') {
-    showToast("✅ Izin notifikasi sudah diberikan!", false);
-    return true;
-  }
-  
-  if (Notification.permission === 'denied') {
-    showToast("❌ Izin notifikasi diblokir! Aktifkan manual dari browser settings.", true);
-    return false;
-  }
-  
-  // MINTA IZIN
-  const permission = await Notification.requestPermission();
-  
-  if (permission === 'granted') {
-    showToast("✅ Izin notifikasi diberikan! Sekarang Notif AI bisa aktif.", false);
-    localStorage.setItem('notif_ai_enabled', 'true');
-    
-    // Update badge
-    const badge = document.getElementById("notif-ai-status-badge");
-    if (badge) {
-      badge.textContent = 'AKTIF';
-      badge.style.background = '#e8f0e8';
-      badge.style.color = '#2d6a4f';
-    }
-    
-    // Update toggle
-    const toggle = document.getElementById("notif-ai-toggle");
-    if (toggle) toggle.checked = true;
-    
-    return true;
-  } else {
-    showToast("❌ Izin notifikasi ditolak! Gak bakal bisa pake Notif AI.", true);
-    return false;
-  }
-}
-
-// ========== 3. FUNGSI KIRIM NOTIFIKASI YANG BENERAN KERJA ==========
-function sendRealNotification(title, body, iconUrl = "https://files.catbox.moe/defcsh.jpg") {
+// ========== FUNGSI KIRIM NOTIFIKASI YANG BENER ==========
+async function sendRealNotification(title, body, iconUrl = "https://files.catbox.moe/defcsh.jpg") {
   console.log("🔔 Mencoba kirim notifikasi:", title);
   
-  // CEK IZIN
+  // 1. CEK SUPPORT
   if (!('Notification' in window)) {
-    console.log("❌ Browser tidak support Notification API");
     showToast("❌ Browser lo gak support notifikasi!", true);
     return false;
   }
   
+  // 2. CEK IZIN
   if (Notification.permission !== 'granted') {
-    console.log("❌ Izin notifikasi belum diberikan. Status:", Notification.permission);
-    showToast("❌ Izin notifikasi belum diberikan! Klik 'Izinkan' dulu, goblok!", true);
+    showToast("❌ Izin notifikasi belum diberikan! Klik 'MINTA IZIN' dulu.", true);
     return false;
   }
   
-  const isNotifEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
-  if (!isNotifEnabled) {
-    console.log("❌ Notif AI belum diaktifkan di pengaturan");
-    showToast("⚠️ Aktifkan Notif AI dulu di pengaturan!", true);
+  // 3. CEK SERVICE WORKER
+  if (!navigator.serviceWorker.controller) {
+    showToast("⚠️ Service Worker belum siap, tunggu 5 detik lalu coba lagi!", true);
+    // Coba register ulang
+    await navigator.serviceWorker.register('/sw.js');
+    setTimeout(() => {
+      sendRealNotification(title, body, iconUrl);
+    }, 2000);
     return false;
   }
   
+  // 4. KIRIM VIA SERVICE WORKER
   try {
-    // BUAT NOTIFIKASI
-    const notification = new Notification(title, {
+    const registration = await navigator.serviceWorker.ready;
+    
+    // Tampilkan notifikasi via SW
+    registration.showNotification(title, {
       body: body,
       icon: iconUrl,
       badge: iconUrl,
-      tag: "hiroko-ai-" + Date.now(),
+      vibrate: [200, 100, 200],
+      tag: "hiroko-" + Date.now(),
       renotify: true,
       requireInteraction: true,
-      silent: false,
-      vibrate: [200, 100, 200],
       data: {
         url: window.location.href,
         type: "hiroko-ai",
         timestamp: Date.now()
-      }
+      },
+      actions: [
+        { action: 'open', title: '💬 Buka HIROKO' },
+        { action: 'reply', title: '✏️ Balas' }
+      ]
     });
     
-    console.log("✅ Notifikasi berhasil dibuat:", notification);
-    
-    // EVENT KLIK NOTIFIKASI
-    notification.onclick = function(event) {
-      event.preventDefault();
-      window.focus();
-      notification.close();
-      
-      // Fokus ke input chat
-      const msgInput = document.getElementById("msg-input");
-      if (msgInput) {
-        msgInput.focus();
-        showToast("💬 Kembali ke HIROKO! Ketik pertanyaanmu.", false);
-      }
-    };
-    
-    notification.onerror = function(event) {
-      console.log("❌ Error saat menampilkan notifikasi:", event);
-      showToast("❌ Gagal menampilkan notifikasi!", true);
-    };
-    
-    notification.onshow = function() {
-      console.log("✅ Notifikasi ditampilkan!");
-    };
-    
+    console.log("✅ Notifikasi berhasil dikirim via SW!");
     showToast("✅ Notifikasi terkirim! Cek notifikasi browser lo.", false);
     return true;
     
   } catch(e) {
-    console.log("❌ Error membuat notifikasi:", e);
-    showToast("❌ Gagal membuat notifikasi: " + e.message, true);
-    return false;
+    console.log("❌ Error kirim notifikasi:", e);
+    
+    // FALLBACK: Pake cara lama
+    try {
+      const notification = new Notification(title, {
+        body: body,
+        icon: iconUrl,
+        badge: iconUrl,
+        vibrate: [200, 100, 200],
+        requireInteraction: true
+      });
+      
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+      
+      console.log("✅ Notifikasi fallback berhasil!");
+      showToast("✅ Notifikasi terkirim (mode fallback)!", false);
+      return true;
+    } catch(e2) {
+      console.log("❌ Fallback juga gagal:", e2);
+      showToast("❌ Gagal kirim notifikasi! Cek console F12.", true);
+      return false;
+    }
   }
 }
 
