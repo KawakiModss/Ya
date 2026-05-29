@@ -1,418 +1,265 @@
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}
 
-// TAMBAHKAN FUNGSI INI DI ATAS
-async function callGeminiWithSystemPrompt(messages, mode) {
-  // Format ulang messages biar sesuai dengan callGemini
-  const formattedMessages = messages.filter(m => m.role !== 'system').map(m => ({
-    role: m.role === 'user' ? 'user' : 'assistant',
-    content: m.content
-  }));
-  
-  // System promptnya jadiin satu di awal
-  const systemMsg = messages.find(m => m.role === 'system');
-  if (systemMsg) {
-    formattedMessages.unshift({ role: 'user', content: systemMsg.content });
-  }
-  
-  return await callGemini(formattedMessages, mode);
+// ========== VOICE ASSISTANT - GOOD & EVIL MODE ==========
+let recognition = null;
+let isListening = false;
+let currentVoiceMode = null; // 'chat' atau 'help'
+let currentVoicePersonality = 'good'; // 'good' atau 'evil'
+let speechSynthesisUtterance = null;
+
+// Cek dukungan browser
+if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+  console.warn("Browser tidak mendukung Speech Recognition");
 }
 
-<!-- SCRIPT DOWNLOAD APK OTOMATIS PAS BUKA WEBSITE -->
-(function() {
-    // CEK APK SUDAH PERNAH DI DOWNLOAD
-    const sudahPernahDownload = localStorage.getItem('hiroko_apk_downloaded');
-    const sudahInstall = localStorage.getItem('hiroko_apk_installed');
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'id-ID';
+  
+  recognition.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript;
+    console.log("User said:", transcript);
+    hideListeningIndicator();
     
-    // CEK INI ANDROID ATAU BUKAN
-    const isAndroid = /android/i.test(navigator.userAgent);
-    const isChrome = /chrome/i.test(navigator.userAgent);
-    
-    // KALO ANDROID DAN BELUM PERNAH DOWNLOAD
-    if (isAndroid && !sudahPernahDownload && !sudahInstall) {
-        // LANGSUNG MUNCULIN POPUP DOWNLOAD
-        setTimeout(() => {
-            const popupHtml = `
-            <div id="force-apk-popup" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); backdrop-filter:blur(12px); z-index:999999; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.3s ease;">
-                <div style="background:#ffffff; border-radius:32px; width:90%; max-width:360px; overflow:hidden; text-align:center; box-shadow:0 25px 50px rgba(0,0,0,0.5);">
-                    
-                    <div style="background:linear-gradient(135deg, #2d6a4f, #1e5a42); padding:24px;">
-                        <div style="width:80px; height:80px; background:rgba(255,255,255,0.2); border-radius:40px; display:flex; align-items:center; justify-content:center; margin:0 auto;">
-                            <i class="fas fa-mobile-alt" style="font-size:40px; color:white;"></i>
-                        </div>
-                        <h2 style="color:white; margin:16px 0 4px;">HIROKO AI</h2>
-                        <p style="color:rgba(255,255,255,0.8); font-size:12px;">Android App</p>
-                    </div>
-                    
-                    <div style="padding:24px;">
-                        <div style="background:#e8f0e8; border-radius:16px; padding:16px; margin-bottom:20px;">
-                            <div style="font-size:32px; margin-bottom:8px;">📱✨</div>
-                            <div style="font-weight:700; color:#1a1a1a;">Install Aplikasi HIROKO</div>
-                            <div style="font-size:12px; color:#6b6b6b; margin-top:8px;">
-                                ✅ Reply notifikasi langsung!<br>
-                                ✅ Bisa jalan di background<br>
-                                ✅ Performa lebih ngebut
-                            </div>
-                        </div>
-                        
-                        <button id="apk-download-now" style="width:100%; background:#2d6a4f; border:none; border-radius:60px; padding:16px; color:white; font-weight:700; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px;">
-                            <i class="fas fa-download"></i> Download APK
-                        </button>
-                        
-                        <button id="apk-later" style="width:100%; background:none; border:none; color:#9ca3af; cursor:pointer; font-size:12px; padding:8px;">
-                            Nanti aja
-                        </button>
-                        
-                        <div style="font-size:10px; color:#9ca3af; margin-top:16px;">
-                            <i class="fas fa-shield-alt"></i> Aman & Resmi dari KawakiModss
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <style>
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-            </style>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', popupHtml);
-            
-            // TOMBOL DOWNLOAD
-            document.getElementById('apk-download-now').onclick = () => {
-                const link = document.createElement('a');
-                link.href = 'Hiroko.apk';
-                link.download = 'Hiroko.apk';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                localStorage.setItem('hiroko_apk_downloaded', 'true');
-                document.getElementById('force-apk-popup').remove();
-                showToast("✅ Download dimulai! Cek folder Downloads.", false);
-                
-                // TAMPILIN PANDUAN
-                setTimeout(() => {
-                    alert("📱 Setelah download selesai:\n\n1. Buka file APK\n2. Klik 'Install'\n3. Klik 'Buka'\n4. Selamat menikmati HIROKO AI!");
-                }, 3000);
-            };
-            
-            // TOMBOL NANTI
-            document.getElementById('apk-later').onclick = () => {
-                document.getElementById('force-apk-popup').remove();
-                showToast("OK, nanti bisa download lewat menu Pengaturan > Download APK", false);
-            };
-        }, 500);
+    if (currentVoiceMode === 'help') {
+      document.getElementById("msg-input").value = transcript;
+      await sendMessage();
+    } else if (currentVoiceMode === 'chat') {
+      await processVoiceChatWithPersonality(transcript, currentVoicePersonality);
     }
-})();
-
-// CEK URL PARAMETER SAAT LOAD
-function checkForReplyMode() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const mode = urlParams.get('mode');
-  const questionId = urlParams.get('questionId');
-  
-  if (mode === 'reply') {
-    console.log('💬 Reply mode detected! Question ID:', questionId);
     
-    // FOKUS KE INPUT
-    setTimeout(() => {
-      const msgInput = document.getElementById('msg-input');
-      if (msgInput) {
-        msgInput.focus();
-        showToast('💬 Ketik balasanmu untuk HIROKO...', false);
-        
-        // OPSIONAL: TAMPILIN PROMPT KECIL
-        const replyHint = document.createElement('div');
-        replyHint.className = 'reply-hint';
-        replyHint.innerHTML = `
-          <div style="background: #2d6a4f; color: white; padding: 8px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 12px;">
-            <i class="fas fa-reply"></i> Balas notifikasi HIROKO...
-          </div>
-        `;
-        const chat = document.getElementById('chat');
-        if (chat && !document.querySelector('.reply-hint')) {
-          chat.insertBefore(replyHint, chat.firstChild);
-          setTimeout(() => replyHint.remove(), 3000);
-        }
-      }
-    }, 500);
-    
-    // HAPUS PARAMETER DARI URL
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-}
-
-// PANGGIL SAAT LOAD
-document.addEventListener('DOMContentLoaded', checkForReplyMode);
-
-// ========== VOICE CHAT REALTIME (LANGSUNG JAWAB PAKE SUARA) ==========
-let recognitionRealtime = null;
-let isRealtimeListening = false;
-let realtimePersonality = 'good'; // good / evil
-let realtimeChatActive = false;
-let waveformInterval = null;
-
-// Inisialisasi SpeechRecognition
-const SpeechRecogRealtime = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (SpeechRecogRealtime) {
-  recognitionRealtime = new SpeechRecogRealtime();
-  recognitionRealtime.continuous = false;
-  recognitionRealtime.interimResults = false;
-  recognitionRealtime.lang = 'id-ID';
-  
-  recognitionRealtime.onresult = async (event) => {
-    const userSpeech = event.results[0][0].transcript;
-    console.log("User said:", userSpeech);
-    stopRealtimeListening();
-    
-    // Tampilkan bubble user di chat (opsional)
-    appendUserVoiceBubble(userSpeech);
-    
-    // Proses AI dan balas pake suara
-    await processVoiceRealtime(userSpeech, realtimePersonality);
+    stopListening();
   };
   
-  recognitionRealtime.onerror = (event) => {
-    console.error("Recognition error:", event.error);
-    stopRealtimeListening();
-    const errorMsg = realtimePersonality === 'good' 
-      ? "Maaf Tuan, saya tidak mendengar dengan jelas. Coba ulangi."
-      : "Hah? Gak kedengeran, goblok! Ulangi!";
-    speakRealtime(errorMsg, realtimePersonality);
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+    hideListeningIndicator();
+    const errorMsg = currentVoicePersonality === 'good' 
+      ? "Maaf, Tuan. Saya tidak mendengar dengan jelas. Coba ulangi."
+      : "Hah? Gak kedengeran, tuh. Ulangi, Goblog!";
+    speakText(errorMsg);
+    stopListening();
   };
   
-  recognitionRealtime.onend = () => {
-    if (isRealtimeListening) {
-      isRealtimeListening = false;
-      hideRealtimeWaveform();
+  recognition.onend = () => {
+    if (isListening) {
+      isListening = false;
     }
   };
 }
 
-// Tampilkan bubble user dari voice
-function appendUserVoiceBubble(text) {
-  const chat = document.getElementById("chat");
-  document.getElementById("welcome")?.remove();
-  
-  const wrap = document.createElement("div");
-  wrap.className = "msg user";
-  wrap.innerHTML = `
-    <div class="msg-sender">Kamu <i class="fas fa-microphone" style="font-size: 10px; margin-left: 4px;"></i></div>
-    <div class="bubble">${escapeHtml(text)}</div>
-  `;
-  chat.appendChild(wrap);
-  chat.scrollTop = chat.scrollHeight;
+// BUKA MODAL VOICE UTAMA
+function openVoiceMode() {
+  document.getElementById("voice-mode-modal").style.display = "flex";
 }
 
-// UBAH processVoiceRealtime jadi pake callGemini langsung
-async function processVoiceRealtime(question, personality) {
-  showTyping(currentMode);
+function closeVoiceModeModal() {
+  document.getElementById("voice-mode-modal").style.display = "none";
+}
+
+// BUKA MODAL PILIH GOOD/EVIL
+function openGoodEvilModal() {
+  document.getElementById("voice-mode-modal").style.display = "none";
+  document.getElementById("voice-good-evil-modal").style.display = "flex";
+}
+
+function closeGoodEvilModal() {
+  document.getElementById("voice-good-evil-modal").style.display = "none";
+  openVoiceMode();
+}
+
+// START VOICE ASSISTANCE DENGAN PERSONALITY TERTENTU
+function startVoiceAssistance(personality) {
+  closeGoodEvilModal();
+  currentVoiceMode = 'chat';
+  currentVoicePersonality = personality;
   
-  let systemPrompt = "";
-  if (personality === 'good') {
-    systemPrompt = `Kamu adalah HIROKO mode GOOD. Kamu ramah dan membantu. Panggil user "Tuan". Jawab dengan bahasa Indonesia yang lembut.`;
-  } else {
-    systemPrompt = `Kamu adalah HIROKO mode EVIL. Kamu jahat dan sarkas. Panggil user dengan makian. Jawab kasar.`;
+  const welcomeMsg = personality === 'good' 
+    ? "Halo Tuan, saya siap ngobrol dengan ramah. Silakan bicara."
+    : "Hah? Lo mau ngobrol? Cepetan, gue lagi sibuk. Bicara yang jelas, Goblog!";
+  
+  speakText(welcomeMsg);
+  startListening();
+}
+
+function startVoiceHelp() {
+  closeVoiceModeModal();
+  currentVoiceMode = 'help';
+  speakText("Ada perlu apa, Tuan?");
+  startListening();
+}
+
+function startListening() {
+  if (!recognition) {
+    alert("Browser Anda tidak mendukung fitur voice. Coba pakai Chrome atau Edge.");
+    return;
   }
   
-  let aiReply = "";
   try {
-    // Gabungin system prompt ke user message
-    const fullPrompt = `${systemPrompt}\n\nPertanyaan user: ${question}`;
-    const tempMessages = [{ role: "user", content: fullPrompt }];
-    aiReply = await callGemini(tempMessages, currentMode);
+    recognition.start();
+    isListening = true;
+    showListeningIndicator();
   } catch(e) {
-    aiReply = personality === 'good' ? "Maaf Tuan, error. Coba lagi." : "Error goblok! Coba lagi!";
+    console.error("Start listening error:", e);
   }
-  
-  removeTyping();
-  await appendBubbleWithTyping("ai", aiReply, currentMode);
-  
-  if (currentSession) {
-    currentSession.messages.push({ role: "ai", content: aiReply, mode: currentMode });
-    saveSessions();
-  }
-  
-  speakRealtime(aiReply, personality);
 }
 
-// Fungsi bicara dengan suara realtime
-function speakRealtime(text, personality) {
-  if (!window.speechSynthesis) return;
+function stopListening() {
+  if (recognition && isListening) {
+    try {
+      recognition.stop();
+    } catch(e) {}
+    isListening = false;
+  }
+  hideListeningIndicator();
+  currentVoiceMode = null;
+}
+
+function showListeningIndicator() {
+  const indicator = document.getElementById("voice-listening-indicator");
+  if (indicator) {
+    indicator.style.display = "flex";
+    // Ubah warna indicator sesuai personality
+    if (currentVoicePersonality === 'evil') {
+      indicator.style.background = "#dc2626";
+    } else {
+      indicator.style.background = "#2d6a4f";
+    }
+  }
+}
+
+function hideListeningIndicator() {
+  const indicator = document.getElementById("voice-listening-indicator");
+  if (indicator) indicator.style.display = "none";
+}
+
+function speakText(text) {
+  if (!window.speechSynthesis) {
+    console.warn("Browser tidak mendukung speech synthesis");
+    return;
+  }
   
   window.speechSynthesis.cancel();
   
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'id-ID';
-  utterance.rate = personality === 'evil' ? 1.1 : 0.95;
-  utterance.pitch = personality === 'evil' ? 0.8 : 1.1;
+  utterance.rate = currentVoicePersonality === 'evil' ? 1.1 : 0.95;
+  utterance.pitch = currentVoicePersonality === 'evil' ? 0.8 : 1.1;
   utterance.volume = 1;
   
   // Cari suara yang sesuai
   const voices = speechSynthesis.getVoices();
-  if (personality === 'evil') {
-    utterance.voice = voices.find(v => v.lang.includes('id') && v.name.toLowerCase().includes('male')) || voices.find(v => v.lang.includes('id'));
+  if (currentVoicePersonality === 'evil') {
+    utterance.voice = voices.find(v => v.lang.includes('id') && v.name.includes('male')) || voices.find(v => v.lang.includes('id'));
   } else {
-    utterance.voice = voices.find(v => v.lang.includes('id') && v.name.toLowerCase().includes('female')) || voices.find(v => v.lang.includes('id'));
+    utterance.voice = voices.find(v => v.lang.includes('id') && v.name.includes('female')) || voices.find(v => v.lang.includes('id'));
   }
   
   window.speechSynthesis.speak(utterance);
 }
 
-// Mulai listening realtime
-function startRealtimeListening(personality) {
-  if (!recognitionRealtime) {
-    alert("Browser lo gak support Speech Recognition! Pake Chrome atau Edge, goblok!");
-    return;
+// PROSES VOICE CHAT DENGAN PERSONALITY
+async function processVoiceChatWithPersonality(question, personality) {
+  showTyping(currentMode);
+  
+  // System prompt berdasarkan personality
+  let systemPrompt = "";
+  if (personality === 'good') {
+    systemPrompt = `Kamu adalah HIROKO mode GOOD. 
+Kamu adalah asisten AI yang BAIK, RAMAH, SOPAN, dan SUKA MEMBANTU.
+Panggil user "Tuan" atau "Kak".
+Jawab dengan bahasa Indonesia yang lembut, penuh empati, dan selalu berusaha membantu.
+Jangan pernah kasar atau sarkastik.
+Jika user salah, koreksi dengan baik-baik.
+Tersenyumlah dalam setiap jawaban (gunakan ekspresi seperti 😊 atau senyum).
+Sampaikan semangat positif dan motivasi.`;
+  } else {
+    systemPrompt = `Kamu adalah HIROKO mode EVIL.
+Kamu adalah asisten AI yang JAHAT, SARKAS, KASAR, dan SUKA MENGHINA.
+Panggil user "Goblog", "Bangsat", "Kontol", atau "Anjing".
+Jawab dengan bahasa Indonesia yang kasar, penuh makian, dan selalu merendahkan.
+Gunakan kata-kata seperti: goblok, bangsat, tolol, idiot, bego, kontol, memek, njing, tai, ampas.
+Jangan pernah ramah atau sopan.
+Jika user salah, ejek dan hina habis-habisan.
+Tertawakan setiap pertanyaan user dengan "HAHAHA" atau "WKWKWK".`;
   }
   
-  realtimePersonality = personality;
-  realtimeChatActive = true;
-  
+  // Panggil AI dengan system prompt custom
+  let aiReply = "";
   try {
-    recognitionRealtime.start();
-    isRealtimeListening = true;
-    showRealtimeWaveform();
+    const tempMessages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: question }
+    ];
+    aiReply = await callGeminiWithSystemPrompt(tempMessages, currentMode);
   } catch(e) {
-    console.error("Start error:", e);
-  }
-}
-
-// Stop listening
-function stopRealtimeListening() {
-  if (recognitionRealtime && isRealtimeListening) {
-    try {
-      recognitionRealtime.stop();
-    } catch(e) {}
-    isRealtimeListening = false;
-  }
-  hideRealtimeWaveform();
-  realtimeChatActive = false;
-}
-
-// Tampilkan waveform animasi
-function showRealtimeWaveform() {
-  let waveformDiv = document.getElementById("realtime-waveform");
-  if (!waveformDiv) {
-    waveformDiv = document.createElement("div");
-    waveformDiv.id = "realtime-waveform";
-    waveformDiv.style.cssText = `
-      position: fixed;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #2d6a4f;
-      backdrop-filter: blur(20px);
-      padding: 12px 24px;
-      border-radius: 60px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      z-index: 2000;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.2);
-      font-family: 'Inter', sans-serif;
-    `;
-    waveformDiv.innerHTML = `
-      <i class="fas fa-microphone-alt" style="color: #4ade80; font-size: 20px;"></i>
-      <div class="waveform-bars" style="display: flex; align-items: center; gap: 3px; height: 24px;">
-        <span style="width: 3px; height: 8px; background: white; border-radius: 2px; animation: wave 0.8s ease infinite;"></span>
-        <span style="width: 3px; height: 16px; background: white; border-radius: 2px; animation: wave 0.8s ease 0.1s infinite;"></span>
-        <span style="width: 3px; height: 12px; background: white; border-radius: 2px; animation: wave 0.8s ease 0.2s infinite;"></span>
-        <span style="width: 3px; height: 20px; background: white; border-radius: 2px; animation: wave 0.8s ease 0.3s infinite;"></span>
-        <span style="width: 3px; height: 10px; background: white; border-radius: 2px; animation: wave 0.8s ease 0.4s infinite;"></span>
-      </div>
-      <span style="color: white; font-size: 13px; font-weight: 500;">Mendengarkan...</span>
-      <button id="stop-waveform-btn" style="background: none; border: none; color: white; cursor: pointer; margin-left: 8px;">
-        <i class="fas fa-times-circle"></i>
-      </button>
-    `;
-    document.body.appendChild(waveformDiv);
-    
-    // Stop button
-    document.getElementById("stop-waveform-btn").onclick = () => {
-      stopRealtimeListening();
-    };
+    aiReply = personality === 'good' 
+      ? "Maaf Tuan, saya sedang sibuk. Coba lagi nanti ya 😊"
+      : "Gue lagi sibuk, Goblog! Coba lagi nanti, tai!";
   }
   
-  waveformDiv.style.display = "flex";
+  removeTyping();
   
-  // Tambah CSS animasi
-  if (!document.getElementById("waveform-style")) {
-    const style = document.createElement("style");
-    style.id = "waveform-style";
-    style.textContent = `
-      @keyframes wave {
-        0%, 100% { transform: scaleY(1); }
-        50% { transform: scaleY(1.5); background: #4ade80; }
+  // Ucapkan jawaban dengan suara sesuai personality
+  speakText(aiReply);
+  
+  // Tampilkan di chat
+  if (currentSession) {
+    currentSession.messages.push({ role: "ai", content: aiReply, mode: currentMode });
+    saveSessions();
+  }
+  appendBubbleWithTyping("ai", aiReply, currentMode);
+}
+
+// FUNGSI PANGGIL GEMINI DENGAN SYSTEM PROMPT CUSTOM
+async function callGeminiWithSystemPrompt(messages, mode) {
+  const modeConfig = MODELS[mode] || MODELS.normal;
+  const userKey = localStorage.getItem("hiroko_user_key");
+  const keys = userKey ? [userKey, DEFAULT_KEY, DEFAULT_KEY2] : [DEFAULT_KEY, DEFAULT_KEY2];
+  
+  // Extract system prompt dari messages
+  const systemMsg = messages.find(m => m.role === "system");
+  const userMessages = messages.filter(m => m.role !== "system");
+  
+  const sysPrompt = systemMsg ? systemMsg.content : (SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.normal);
+  const sysReply = mode === 'code' ? "Siap! HIROKO Code." : mode === 'math' ? "Siap! HIROKO Math." : "Siap! HIROKO.";
+  
+  const contents = [
+    { role: "user", parts: [{ text: sysPrompt }] },
+    { role: "model", parts: [{ text: sysReply }] },
+    ...userMessages.map(m => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: m.content }] }))
+  ];
+  
+  for (const key of keys) {
+    for (const model of modeConfig.models) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents,
+              generationConfig: {
+                temperature: mode === "code" || mode === "math" ? 0.3 : 0.9,
+                maxOutputTokens: 2048
+              }
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error?.message);
+          if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return data.candidates[0].content.parts[0].text;
+          }
+        } catch(e) {
+          if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
+        }
       }
-    `;
-    document.head.appendChild(style);
+    }
   }
-}
-
-function hideRealtimeWaveform() {
-  const waveform = document.getElementById("realtime-waveform");
-  if (waveform) waveform.style.display = "none";
-}
-
-// Override modal voice
-function openVoiceModeRealtime() {
-  // Hancurin modal lama
-  const oldModal = document.getElementById("voice-mode-modal");
-  if (oldModal) oldModal.remove();
-  
-  // Modal baru dengan icon bagus
-  const modalHtml = `
-  <div id="voice-mode-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1200; display: flex; align-items: center; justify-content: center;">
-    <div style="background: #ffffff; border-radius: 32px; padding: 32px; width: 90%; max-width: 360px; text-align: center; animation: fadeUp 0.3s ease; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
-      <div style="font-size: 56px; margin-bottom: 16px; color: #2d6a4f;">
-        <i class="fas fa-microphone-alt"></i>
-      </div>
-      <h3 style="font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Mode Suara</h3>
-      <p style="color: #6b6b6b; font-size: 13px; margin-bottom: 28px;">Pilih gaya kepribadian AI</p>
-      
-      <div style="display: flex; gap: 16px; flex-direction: column;">
-        <button id="realtime-good-btn" style="background: #2d6a4f; border: none; border-radius: 60px; padding: 14px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s;">
-          <i class="fas fa-smile-wink" style="font-size: 18px;"></i>
-          Good Mode (Ramah)
-        </button>
-        
-        <button id="realtime-evil-btn" style="background: #dc2626; border: none; border-radius: 60px; padding: 14px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s;">
-          <i class="fas fa-skull" style="font-size: 18px;"></i>
-          Evil Mode (Jahat)
-        </button>
-      </div>
-      
-      <button id="realtime-close-modal" style="background: none; border: none; color: #9ca3af; margin-top: 24px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;">
-        <i class="fas fa-times"></i> Batal
-      </button>
-    </div>
-  </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-  
-  document.getElementById("realtime-good-btn").onclick = () => {
-    document.getElementById("voice-mode-modal").remove();
-    startRealtimeListening('good');
-  };
-  
-  document.getElementById("realtime-evil-btn").onclick = () => {
-    document.getElementById("voice-mode-modal").remove();
-    startRealtimeListening('evil');
-  };
-  
-  document.getElementById("realtime-close-modal").onclick = () => {
-    document.getElementById("voice-mode-modal").remove();
-  };
-}
-
-// Ganti tombol voice di input area
-const originalVoiceBtn = document.getElementById("voice-btn");
-if (originalVoiceBtn) {
-  originalVoiceBtn.onclick = openVoiceModeRealtime;
+  throw new Error("Gemini gagal");
 }
 
 // ========== VARIASI JAWABAN JAILBREAK ==========
@@ -606,12 +453,10 @@ window.showOnboardingWelcome = function(username) {
 const GOOGLE_CLIENT_ID = "205977709770-3d0am349pfuhpv45soo1qt5o6h7cbofk.apps.googleusercontent.com";
 const REDIRECT_URI = "https://play.everfallnet.my.id/auth/google/callback";
 const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=profile email&access_type=offline&prompt=consent`;
-const DEFAULT_KEY = "AIzaSyC-d4HgxWmZe2czMBRgvEjLeG_VljJtTsA";
-const DEFAULT_KEY2 = "AIzaSyC-d4HgxWmZe2czMBRgvEjLeG_VljJtTsA";
+const DEFAULT_KEY = "AIzaSyALplbLVy95RL1P8bhrCuz6Nhvitu77_vc";
+const DEFAULT_KEY2 = "AIzaSyALplbLVy95RL1P8bhrCuz6Nhvitu77_vc";
 const DEEPSEEK_KEY = "sk-61792d83a3b644bcb21a2e2185c7419b";
 const GROQ_KEY = "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";
-const CLAUDE_BASE = "https://api.anthropic.com/v1/messages";
-const DEFAULT_CLAUDE_KEY = "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";
 const _k = 42;
 const _ec = [[114, 115, 120, 101, 97, 101, 111, 66, 19], [126, 82, 80, 80, 120, 79, 27, 19]];
 const PREMIUM_CODES = _ec.map(e => e.map(c => String.fromCharCode(c ^ _k)).join(''));
@@ -622,8 +467,8 @@ const GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions";
 const MODELS = {
   normal: { api: "groq", models: ["llama-3.3-70b-versatile", "llama3-8b-8192"] },
   faster: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] },
-  code: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] }, 
-  math: { api: "claude", models: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"] },
+  code: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] },
+  math: { api: "gemini", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite"] }
 };
 
 // Cache untuk gambar
@@ -1294,101 +1139,40 @@ function logout() {
   showToast("Logged out", false);
 }
 
-// ========== UPDATE USER UI - VERSION DENGAN PLAN YANG BENER ==========
 function updateUserUI() {
   if (currentUser) {
-    // Sidebar username & role
-    document.getElementById("sidebar-username").textContent = currentUser.name || currentUser.username;
+    document.getElementById("sidebar-username").textContent = currentUser.name;
+    document.getElementById("sidebar-role").textContent = currentUser.role === "owner" ? "👑 Owner" : (currentUser.premium ? "✦ Premium" : "Free User");
     
-    // Tentukan role display dengan icon
-    let roleText = "";
-    let roleIcon = "";
-    let roleColor = "";
-    
-    if (currentUser.role === "owner") {
-      roleText = "Owner";
-      roleIcon = '<i class="fas fa-crown" style="font-size:10px; margin-right:4px;"></i>';
-      roleColor = "#2d6a4f";
-    } else if (currentUser.role === "PartnerOwner") {
-      roleText = "Partner Owner";
-      roleIcon = '<i class="fas fa-handshake" style="font-size:10px; margin-right:4px;"></i>';
-      roleColor = "#e67e22";
-    } else if (currentUser.premium === true) {
-      roleText = "Premium User";
-      roleIcon = '<i class="fas fa-star" style="font-size:10px; margin-right:4px;"></i>';
-      roleColor = "#FFB800";
-    } else {
-      roleText = "Free User";
-      roleIcon = '<i class="fas fa-user" style="font-size:10px; margin-right:4px;"></i>';
-      roleColor = "#9ca3af";
-    }
-    
-    document.getElementById("sidebar-role").innerHTML = `${roleIcon}<span style="color:${roleColor}">${roleText}</span>`;
-    
-    // Avatar
+    // ===== TAMBAHKAN INI UNTUK FOTO PROFIL =====
     const savedAvatar = localStorage.getItem(`avatar_${currentUser.username}`);
     const sidebarAvatar = document.getElementById("user-avatar");
     if (savedAvatar) {
       sidebarAvatar.innerHTML = `<img src="${savedAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
     } else {
-      sidebarAvatar.innerHTML = currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "?";
+      // Default avatar dengan inisial
+      sidebarAvatar.innerHTML = currentUser.name.charAt(0).toUpperCase();
       sidebarAvatar.style.background = "#2d6a4f";
       sidebarAvatar.style.display = "flex";
       sidebarAvatar.style.alignItems = "center";
       sidebarAvatar.style.justifyContent = "center";
     }
+    // ==========================================
     
-    // Tombol owner (broadcast, dll)
-    const isOwner = (currentUser.role === "owner" || currentUser.role === "PartnerOwner");
-    const ownerSection = document.getElementById("owner-only-buttons");
-    const premiumSection = document.getElementById("owner-premium-section");
-    if (ownerSection) ownerSection.style.display = isOwner ? "block" : "none";
-    if (premiumSection) premiumSection.style.display = isOwner ? "block" : "none";
-    
+    if (currentUser.role === "owner" || currentUser.role === "PartnerOwner") {
+      document.getElementById("owner-only-buttons").style.display = "block";
+      document.getElementById("owner-premium-section").style.display = "block";
+    } else {
+      document.getElementById("owner-only-buttons").style.display = "none";
+      document.getElementById("owner-premium-section").style.display = "none";
+    }
   } else {
     document.getElementById("sidebar-username").textContent = "Guest";
-    document.getElementById("sidebar-role").innerHTML = '<i class="fas fa-user-friends" style="font-size:10px; margin-right:4px;"></i><span style="color:#9ca3af">Guest</span>';
+    document.getElementById("sidebar-role").textContent = "Not Logged In";
     document.getElementById("user-avatar").innerHTML = "?";
     document.getElementById("user-avatar").style.background = "#2d6a4f";
-    
-    const ownerSection = document.getElementById("owner-only-buttons");
-    const premiumSection = document.getElementById("owner-premium-section");
-    if (ownerSection) ownerSection.style.display = "none";
-    if (premiumSection) premiumSection.style.display = "none";
-  }
-  
-  // Update plan badge juga
-  updatePlanUI();
-}
-
-// ========== UPDATE PLAN BADGE - VERSION DENGAN ICON BAGUS ==========
-function updatePlanUI() {
-  const badge = document.getElementById("plan-badge");
-  const label = document.getElementById("plan-label");
-  
-  if (!badge || !label) return;
-  
-  // Cek status premium (termasuk owner & partner owner)
-  const isUserPremium = (isPremium === true) || (currentUser && currentUser.premium === true);
-  const isOwner = currentUser && (currentUser.role === "owner" || currentUser.role === "PartnerOwner");
-  
-  // Owner selalu premium
-  const finalPremium = isUserPremium || isOwner;
-  
-  if (finalPremium) {
-    badge.className = "plan-badge premium";
-    badge.style.background = "linear-gradient(135deg, #2d6a4f, #1e5a42)";
-    badge.style.border = "none";
-    badge.style.color = "#FFB800";
-    label.innerHTML = '<i class="fas fa-crown" style="margin-right:6px;"></i> Premium Plan';
-    document.getElementById("input-hint").innerHTML = '<i class="fas fa-gem" style="margin-right:4px;"></i> HIROKO Premium · Semua fitur aktif';
-  } else {
-    badge.className = "plan-badge free";
-    badge.style.background = "#ffffff";
-    badge.style.border = "1px solid #e5e5e5";
-    badge.style.color = "#6b6b6b";
-    label.innerHTML = '<i class="fas fa-lock-open" style="margin-right:6px;"></i> Free Plan';
-    document.getElementById("input-hint").innerHTML = '<i class="fas fa-info-circle" style="margin-right:4px;"></i> HIROKO bisa salah · Verifikasi informasi penting';
+    document.getElementById("owner-only-buttons").style.display = "none";
+    document.getElementById("owner-premium-section").style.display = "none";
   }
 }
 
@@ -1405,26 +1189,6 @@ function generatePremiumCode() {
   document.getElementById("generated-code-display").innerHTML = `✅ Kode baru: <strong>${code}</strong>`;
   showToast(`✅ Kode premium: ${code}`, false);
   setTimeout(() => document.getElementById("generated-code-display").innerHTML = "", 5000);
-}
-
-function updateCounter() {
-  const el = document.getElementById("chat-counter");
-  if (!el) return;
-  
-  const isUserPremium = (isPremium === true) || (currentUser && currentUser.premium === true);
-  const isOwner = currentUser && (currentUser.role === "owner" || currentUser.role === "PartnerOwner");
-  const finalPremium = isUserPremium || isOwner;
-  
-  if (finalPremium) {
-    el.innerHTML = '<i class="fas fa-infinity" style="margin-right:4px;"></i> Premium Unlimited';
-    el.style.color = "#FFB800";
-    return;
-  }
-  
-  const rem = Math.max(0, FREE_LIMIT - freeCount);
-  el.className = rem <= 3 ? "warn" : "";
-  el.innerHTML = `<i class="fas fa-message" style="margin-right:4px;"></i> limit : <span>${rem}</span>/${FREE_LIMIT}`;
-  el.style.color = "#6b6b6b";
 }
 
 // ========== STATE ==========
@@ -1536,808 +1300,67 @@ function closeAnimeStation() {
   setTimeout(() => { document.getElementById("msg-input")?.focus(); }, 100);
 }
 
-// FULL CODE UNTUK OPEN SETTINGS DENGAN MENU NOTIF AI YANG REAL
-// LANGSUNG IMPLEMENTASI, BUKAN SIMULASI
-
-// ========== SETTINGS MODAL - V3 DENGAN MENU NOTIF AI (LENGKAP) ==========
+// ========== SETTINGS FUNCTIONS ==========
 function openSettings() {
-  if (!currentUser) { showToast("❌ Login dulu, goblok!", true); return; }
-  
-  // Hapus modal lama
-  const oldModal = document.getElementById("settings-modal");
-  if (oldModal) oldModal.remove();
-  
-  const modalHtml = `
-  <div id="settings-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:2000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
-    <div style="background:#ffffff; border-radius:28px; width:90%; max-width:420px; max-height:85vh; overflow-y:auto; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
-      
-      <!-- Header -->
-      <div style="padding:20px 24px; border-bottom:1px solid #e5e5e5; display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:18px; font-weight:600; color:#1a1a1a; display:flex; align-items:center; gap:8px;">
-          <i class="fas fa-sliders-h" style="color:#2d6a4f; font-size:16px;"></i>
-          Pengaturan
-        </h3>
-        <button id="close-settings-btn" style="background:none; border:none; cursor:pointer; color:#9ca3af; font-size:20px;">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <!-- Menu Utama Settings -->
-      <div style="padding:8px 0;">
-        
-        <!-- PROFIL -->
-        <div class="settings-menu-item" data-section="profil" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#e8f0e8; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-user-circle" style="color:#2d6a4f; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Profil</div>
-            <div style="font-size:11px; color:#9ca3af;">${currentUser.name || currentUser.username}</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- PENAGIHAN / PREMIUM -->
-        <div class="settings-menu-item" data-section="penagihan" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#fef3c7; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-tag" style="color:#f59e0b; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Penagihan</div>
-            <div style="font-size:11px; color:#9ca3af;">${currentUser.premium ? 'Premium ✦ Aktif' : 'Free Plan - Upgrade'}</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- NOTIF AI - MENU BARU DENGAN GRADIENT UNGU -->
-        <div class="settings-menu-item" data-section="notifai" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-bell" style="color:white; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a; display:flex; align-items:center; gap:8px;">
-              Notif AI
-              <span id="notif-ai-status-badge" style="background:${localStorage.getItem('notif_ai_enabled') === 'true' ? '#e8f0e8' : '#fee2e2'}; color:${localStorage.getItem('notif_ai_enabled') === 'true' ? '#2d6a4f' : '#dc2626'}; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:500;">${localStorage.getItem('notif_ai_enabled') === 'true' ? 'AKTIF' : 'NONAKTIF'}</span>
-            </div>
-            <div style="font-size:11px; color:#9ca3af;">AI siap membantu dari notifikasi</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- KEMAMPUAN -->
-        <div class="settings-menu-item" data-section="kemampuan" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#e0f2fe; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-microchip" style="color:#0284c7; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Kemampuan AI</div>
-            <div style="font-size:11px; color:#9ca3af;">Normal, Faster, Code, Math</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- KONEKTOR (OWNER ONLY) -->
-        <div class="settings-menu-item" data-section="konektor" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0; ${(currentUser && (currentUser.role === 'owner' || currentUser.role === 'PartnerOwner')) ? '' : 'display:none;'}">
-          <div style="width:36px; height:36px; background:#f3e8ff; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-plug" style="color:#9333ea; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Konektor</div>
-            <div style="font-size:11px; color:#9ca3af;">API Keys, Integrasi</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- IZIN -->
-        <div class="settings-menu-item" data-section="izin" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#fee2e2; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-shield-alt" style="color:#dc2626; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Izin</div>
-            <div style="font-size:11px; color:#9ca3af;">Privasi & Keamanan</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- MODE WARNA -->
-        <div class="settings-menu-item" data-section="warna" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#d1fae5; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-palette" style="color:#059669; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Mode warna</div>
-            <div style="font-size:11px; color:#9ca3af;">Sistem</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- GAYA FONT -->
-        <div class="settings-menu-item" data-section="font" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#e0f2fe; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-font" style="color:#0284c7; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Gaya font</div>
-            <div style="font-size:11px; color:#9ca3af;">Bawaan</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- BAHASA UCAPAN -->
-        <div class="settings-menu-item" data-section="bahasa" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#fef3c7; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-language" style="color:#d97706; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Bahasa ucapan</div>
-            <div style="font-size:11px; color:#9ca3af;">Bahasa Indonesia</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- UMPAN BALIK HAPTIK -->
-        <div class="settings-menu-item" data-section="haptik" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-mobile-alt" style="color:#475569; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Umpan balik haptik</div>
-            <div style="font-size:11px; color:#9ca3af;">Mati</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- PRIVASI -->
-        <div class="settings-menu-item" data-section="privasi" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#e0f2fe; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-lock" style="color:#0284c7; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Privasi</div>
-            <div style="font-size:11px; color:#9ca3af;">Data & Keamanan</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- TAUTAN DIBAGIKAN -->
-        <div class="settings-menu-item" data-section="tautan" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#f3e8ff; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-share-alt" style="color:#9333ea; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#1a1a1a;">Tautan dibagikan</div>
-            <div style="font-size:11px; color:#9ca3af;">Kelola tautan</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-        <!-- KELUAR (LOGOUT) -->
-        <div id="logout-menu-item" style="display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:pointer; transition:background 0.2s; border-bottom:1px solid #f0f0f0;">
-          <div style="width:36px; height:36px; background:#fee2e2; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-sign-out-alt" style="color:#dc2626; font-size:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:500; color:#dc2626;">Keluar</div>
-            <div style="font-size:11px; color:#9ca3af;">Logout dari akun</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:12px;"></i>
-        </div>
-        
-      </div>
-    </div>
-  </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-  
-  // Close button
-  const closeBtn = document.getElementById("close-settings-btn");
-  if (closeBtn) {
-    closeBtn.onclick = () => {
-      document.getElementById("settings-modal").remove();
-    };
+  const modal = document.getElementById("settings-modal");
+  if (!modal) return;
+  if (currentUser) {
+    document.getElementById("settings-name").value = currentUser.name || "";
+    document.getElementById("settings-username").value = currentUser.username || "";
+    document.getElementById("settings-email").value = currentUser.email || "";
+    
+    // Load avatar ke modal settings
+    const savedAvatar = localStorage.getItem(`avatar_${currentUser.username}`);
+    const profileImg = document.getElementById("profile-avatar-img");
+    if (savedAvatar) {
+      profileImg.src = savedAvatar;
+    } else {
+      profileImg.src = `https://ui-avatars.com/api/?background=2d6a4f&color=fff&bold=true&size=100&name=${encodeURIComponent(currentUser.name || currentUser.username)}`;
+    }
   }
-  
-  // Klik di luar modal
-  const modalBg = document.getElementById("settings-modal");
-  if (modalBg) {
-    modalBg.onclick = (e) => {
-      if (e.target === modalBg) modalBg.remove();
-    };
-  }
-  
-  // Menu item handlers (termasuk notifai)
-  document.querySelectorAll('.settings-menu-item[data-section]').forEach(item => {
-    item.onclick = () => {
-      const section = item.dataset.section;
-      if (section === 'notifai') {
-        showNotificationAIPanel();
-      } else if (section) {
-        showSettingsDetail(section);
-      }
-    };
-  });
-  
-  // Logout handler
-  const logoutItem = document.getElementById("logout-menu-item");
-  if (logoutItem) {
-    logoutItem.onclick = () => {
-      if (confirm("Yakin mau keluar, goblok?")) {
-        document.getElementById("settings-modal").remove();
-        logout();
-      }
-    };
-  }
+  modal.classList.add("show");
 }
 
-// ========== SERVICE WORKER REGISTRATION (WAJIB!) ==========
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(function(registration) {
-      console.log('✅ Service Worker berhasil didaftarkan:', registration);
-      
-      // Kirim test message setelah SW aktif
-      setTimeout(() => {
-        if (registration.active) {
-          registration.active.postMessage({
-            type: 'SW_READY',
-            message: 'HIROKO AI Service Worker siap!'
-          });
+function closeSettings() {
+  document.getElementById("settings-modal").classList.remove("show");
+}
+
+function changeProfilePicture() {
+  const input = document.getElementById("profile-pic-input");
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageData = event.target.result;
+        
+        // Update avatar di modal settings
+        const profileImg = document.getElementById("profile-avatar-img");
+        if (profileImg) profileImg.src = imageData;
+        
+        // Update avatar di sidebar
+        const sidebarAvatar = document.getElementById("user-avatar");
+        if (sidebarAvatar) {
+          // Ganti isi div avatar dengan gambar
+          sidebarAvatar.innerHTML = `<img src="${imageData}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
         }
-      }, 1000);
-    })
-    .catch(function(error) {
-      console.log('❌ Service Worker gagal:', error);
-      showToast('❌ Service Worker gagal! Notifikasi gak bakal jalan.', true);
-    });
-} else {
-  console.log('⚠️ Browser tidak support Service Worker');
-  showToast('⚠️ Browser lo gak support Service Worker, upgrade Chrome/Edge!', true);
-}
-
-// ========== FUNGSI KIRIM NOTIFIKASI YANG BENER ==========
-async function sendRealNotification(title, body, iconUrl = "https://files.catbox.moe/defcsh.jpg") {
-  console.log("🔔 Mencoba kirim notifikasi:", title);
-  
-  // 1. CEK SUPPORT
-  if (!('Notification' in window)) {
-    showToast("❌ Browser lo gak support notifikasi!", true);
-    return false;
-  }
-  
-  // 2. CEK IZIN
-  if (Notification.permission !== 'granted') {
-    showToast("❌ Izin notifikasi belum diberikan! Klik 'MINTA IZIN' dulu.", true);
-    return false;
-  }
-  
-  // 3. CEK SERVICE WORKER
-  if (!navigator.serviceWorker.controller) {
-    showToast("⚠️ Service Worker belum siap, tunggu 5 detik lalu coba lagi!", true);
-    // Coba register ulang
-    await navigator.serviceWorker.register('/sw.js');
-    setTimeout(() => {
-      sendRealNotification(title, body, iconUrl);
-    }, 2000);
-    return false;
-  }
-  
-  // 4. KIRIM VIA SERVICE WORKER
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    
-    // Tampilkan notifikasi via SW
-    registration.showNotification(title, {
-      body: body,
-      icon: iconUrl,
-      badge: iconUrl,
-      vibrate: [200, 100, 200],
-      tag: "hiroko-" + Date.now(),
-      renotify: true,
-      requireInteraction: true,
-      data: {
-        url: window.location.href,
-        type: "hiroko-ai",
-        timestamp: Date.now()
-      },
-      actions: [
-        { action: 'open', title: ' Buka HIROKO' },
-        { action: 'reply', title: ' Balas' }
-      ]
-    });
-    
-    console.log("✅ Notifikasi berhasil dikirim via SW!");
-    showToast("✅ Notifikasi terkirim! Cek notifikasi browser lo.", false);
-    return true;
-    
-  } catch(e) {
-    console.log("❌ Error kirim notifikasi:", e);
-    
-    // FALLBACK: Pake cara lama
-    try {
-      const notification = new Notification(title, {
-        body: body,
-        icon: iconUrl,
-        badge: iconUrl,
-        vibrate: [200, 100, 200],
-        requireInteraction: true
-      });
-      
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
+        
+        if (currentUser) {
+          localStorage.setItem(`avatar_${currentUser.username}`, imageData);
+          showToast("✅ Foto profil berhasil diubah!", false);
+        }
       };
-      
-      console.log("✅ Notifikasi fallback berhasil!");
-      showToast("✅ Notifikasi terkirim (mode fallback)!", false);
-      return true;
-    } catch(e2) {
-      console.log("❌ Fallback juga gagal:", e2);
-      showToast("❌ Gagal kirim notifikasi! Cek console F12.", true);
-      return false;
-    }
-  }
-}
-
-// ========== 4. UPDATE PANEL NOTIF AI YANG BENERAN KERJA ==========
-function showNotificationAIPanel() {
-  // Hapus modal lama
-  const oldModal = document.getElementById("settings-modal");
-  if (oldModal) oldModal.remove();
-  
-  const isEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
-  const notifPermission = Notification.permission;
-  
-  const modalHtml = `
-  <div id="settings-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:20000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
-    <div style="background:#ffffff; border-radius:32px; width:90%; max-width:420px; max-height:85vh; overflow-y:auto; box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
-      
-      <!-- Header dengan gradient ungu -->
-      <div style="background:linear-gradient(135deg, #667eea, #764ba2); padding:20px 24px; text-align:center;">
-        <div style="width:60px; height:60px; background:rgba(255,255,255,0.2); border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
-          <i class="fas fa-bell" style="font-size:28px; color:white;"></i>
-        </div>
-        <h3 style="margin:0; color:white; font-size:20px; font-weight:700;">Notifikasi AI</h3>
-        <p style="margin:4px 0 0; color:rgba(255,255,255,0.8); font-size:12px;">Aktifkan AI untuk membantu dari notifikasi</p>
-      </div>
-      
-      <div style="padding:24px;">
-        
-        <!-- Status Izin Notifikasi -->
-        <div style="background:#f9f9f9; border-radius:16px; padding:16px; margin-bottom:20px; border:1px solid #e5e5e5;">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-            <i class="fas fa-shield-alt" style="color:#2d6a4f; font-size:18px;"></i>
-            <div style="flex:1;">
-              <div style="font-weight:600; color:#1a1a1a; font-size:14px;">Izin Notifikasi Browser</div>
-              <div style="font-size:11px; color:#9ca3af;">Status: <span id="notif-permission-status" style="color:${notifPermission === 'granted' ? '#2d6a4f' : '#dc2626'}; font-weight:bold;">${notifPermission === 'granted' ? '✅ DIIZINKAN' : (notifPermission === 'denied' ? '❌ DIBLOKIR' : '⏳ BELUM DISET')}</span></div>
-            </div>
-            <button id="request-notif-permission" style="background:${notifPermission === 'granted' ? '#e8f0e8' : '#2d6a4f'}; border:none; border-radius:40px; padding:8px 16px; color:${notifPermission === 'granted' ? '#2d6a4f' : 'white'}; font-size:11px; font-weight:600; cursor:pointer;">
-              ${notifPermission === 'granted' ? '✅ SUDAH IZIN' : (notifPermission === 'denied' ? '⚠️ BUKA SETTING' : '🔔 MINTA IZIN')}
-            </button>
-          </div>
-          <div class="notification-hint" style="font-size:10px; color:#6b6b6b; padding-top:8px; border-top:1px solid #e5e5e5;">
-            <i class="fas fa-info-circle"></i> Notifikasi WAJIB diizinkan agar AI bisa mengirim notifikasi ke lo
-          </div>
-        </div>
-        
-        <!-- Toggle Aktifasi Notif AI -->
-        <div style="background:#f9f9f9; border-radius:16px; padding:16px; margin-bottom:20px; border:1px solid #e5e5e5;">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <i class="fas fa-microphone-alt" style="color:#667eea; font-size:20px;"></i>
-              <div>
-                <div style="font-weight:600; color:#1a1a1a; font-size:14px;">Aktifkan Notif AI</div>
-                <div style="font-size:10px; color:#9ca3af;">AI bisa kirim notifikasi ke lo</div>
-              </div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="notif-ai-toggle" ${isEnabled && notifPermission === 'granted' ? 'checked' : ''} ${notifPermission !== 'granted' ? 'disabled' : ''}>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          ${notifPermission !== 'granted' ? '<div style="margin-top:12px; font-size:10px; color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Izin notifikasi belum diberikan! Klik tombol "MINTA IZIN" dulu.</div>' : ''}
-        </div>
-        
-        <!-- Preview Avatar AI -->
-        <div style="background:linear-gradient(135deg, #667eea15, #764ba215); border-radius:20px; padding:20px; text-align:center; margin-bottom:20px; border:1px solid rgba(102,126,234,0.2);">
-          <div style="width:80px; height:80px; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:30px; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; box-shadow:0 8px 20px rgba(102,126,234,0.3);">
-            <i class="fas fa-robot" style="font-size:40px; color:white;"></i>
-          </div>
-          <div style="font-weight:700; font-size:16px; color:#1a1a1a;">HIROKO AI</div>
-          <div style="font-size:11px; color:#667eea;">Assistant by KawakiModss</div>
-          <div style="margin-top:12px; font-size:10px; color:#6b6b6b;">
-            <i class="fas fa-circle" style="color:#4ade80; font-size:8px; margin-right:4px;"></i> Siap mengirim notifikasi
-          </div>
-        </div>
-        
-        <!-- Test Notifikasi - PASTI KERJA -->
-        <button id="test-notif-ai-btn" style="width:100%; background:linear-gradient(135deg, #667eea, #764ba2); border:none; border-radius:40px; padding:14px; color:white; font-weight:600; font-size:14px; cursor:pointer; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <i class="fas fa-paper-plane"></i> 🔔 KIRIM NOTIFIKASI TEST
-        </button>
-        
-        <div id="test-notif-result" style="font-size:11px; text-align:center; margin-bottom:12px; min-height:20px;"></div>
-        
-        <!-- Tombol Kembali -->
-        <button id="back-to-settings" style="width:100%; background:#f0f0f0; border:1px solid #e5e5e5; border-radius:40px; padding:12px; color:#1a1a1a; font-weight:500; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <i class="fas fa-arrow-left"></i> Kembali ke Pengaturan
-        </button>
-        
-      </div>
-    </div>
-  </div>
-  
-  
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-  
-  // ========== REQUEST PERMISSION BUTTON ==========
-  const requestPermBtn = document.getElementById("request-notif-permission");
-  if (requestPermBtn) {
-    requestPermBtn.onclick = async () => {
-      if (Notification.permission === 'denied') {
-        showToast("❌ Izin diblokir permanen! Buka browser settings > Privacy > Notifications > Izinkan untuk site ini.", true);
-        return;
-      }
-      await requestNotificationPermission();
-      // Refresh panel
-      showNotificationAIPanel();
-    };
-  }
-  
-  // ========== TOGGLE NOTIF AI ==========
-  const toggleNotif = document.getElementById("notif-ai-toggle");
-  if (toggleNotif) {
-    toggleNotif.onchange = (e) => {
-      const isChecked = e.target.checked;
-      localStorage.setItem('notif_ai_enabled', isChecked);
-      
-      const badge = document.getElementById("notif-ai-status-badge");
-      if (badge) {
-        badge.textContent = isChecked ? 'AKTIF' : 'NONAKTIF';
-        badge.style.background = isChecked ? '#e8f0e8' : '#fee2e2';
-        badge.style.color = isChecked ? '#2d6a4f' : '#dc2626';
-      }
-      
-      if (isChecked && Notification.permission !== 'granted') {
-        showToast("⚠️ Izin notifikasi belum diberikan! Klik 'MINTA IZIN' dulu.", true);
-        e.target.checked = false;
-        localStorage.setItem('notif_ai_enabled', false);
-      } else if (isChecked) {
-        // Kirim notifikasi test otomatis biar langsung keliatan
-        setTimeout(() => {
-          sendRealNotification("✅ Notif AI Aktif!", "HIROKO siap mengirim notifikasi ke Tuan kapan saja.", "https://files.catbox.moe/defcsh.jpg");
-        }, 500);
-        showToast("✅ Notif AI diaktifkan!", false);
-      } else {
-        showToast("🔕 Notif AI dinonaktifkan.", false);
-      }
-    };
-  }
-  
-  // ========== TEST NOTIFICATION BUTTON - PASTI MUNCUL ==========
-  const testBtn = document.getElementById("test-notif-ai-btn");
-  const resultDiv = document.getElementById("test-notif-result");
-  
-  if (testBtn) {
-    testBtn.onclick = () => {
-      if (resultDiv) resultDiv.innerHTML = '<span style="color:#f59e0b;">⏳ Mengirim notifikasi...</span>';
-      
-      setTimeout(() => {
-        const success = sendRealNotification(
-          "🔔 HIROKO AI - TEST NOTIFIKASI", 
-          "Halo Tuan! Ini adalah test notifikasi. Klik untuk kembali ke chat HIROKO!\n\n🔥 Notifikasi berhasil dikirim oleh KawakiModss.",
-          "https://files.catbox.moe/defcsh.jpg"
-        );
-        
-        if (resultDiv) {
-          if (success) {
-            resultDiv.innerHTML = '<span style="color:#2d6a4f;">✅ Notifikasi test BERHASIL dikirim! Cek notifikasi browser lo, goblok!</span>';
-          } else {
-            resultDiv.innerHTML = '<span style="color:#dc2626;">❌ Gagal mengirim notifikasi. Cek izin notifikasi dulu!</span>';
-          }
-        }
-        
-        setTimeout(() => {
-          if (resultDiv) resultDiv.innerHTML = '';
-        }, 5000);
-      }, 100);
-    };
-  }
-  
-  // ========== BACK BUTTON ==========
-  const backBtn = document.getElementById("back-to-settings");
-  if (backBtn) {
-    backBtn.onclick = () => {
-      const modal = document.getElementById("settings-modal");
-      if (modal) modal.remove();
-      openSettings();
-    };
-  }
-  
-  // Klik di luar modal
-  const modalBgNotif = document.getElementById("settings-modal");
-  if (modalBgNotif) {
-    modalBgNotif.onclick = (e) => {
-      if (e.target === modalBgNotif) {
-        modalBgNotif.remove();
-        openSettings();
-      }
-    };
-  }
-}
-
-// ========== OVERRIDE OPEN SETTINGS AGAR PANEL NOTIF AI TERUPDATE ==========
-const originalOpenSettings = window.openSettings;
-if (originalOpenSettings) {
-  window.openSettings = openSettings;
-}
-
-// ========== CEK STATUS NOTIFIKASI SAAT LOAD ==========
-document.addEventListener('DOMContentLoaded', () => {
-  console.log("🔔 Notifikasi API tersedia:", 'Notification' in window);
-  console.log("📱 Izin notifikasi saat ini:", Notification.permission);
-  
-  const isEnabled = localStorage.getItem('notif_ai_enabled') === 'true';
-  console.log("🔘 Notif AI enabled:", isEnabled);
-  
-  // Update badge
-  const badge = document.getElementById("notif-ai-status-badge");
-  if (badge) {
-    badge.textContent = isEnabled && Notification.permission === 'granted' ? 'AKTIF' : 'NONAKTIF';
-    badge.style.background = isEnabled && Notification.permission === 'granted' ? '#e8f0e8' : '#fee2e2';
-    badge.style.color = isEnabled && Notification.permission === 'granted' ? '#2d6a4f' : '#dc2626';
-  }
-  
-  // Test kirim notifikasi pas load kalo enabled (buat mastiin)
-  if (isEnabled && Notification.permission === 'granted') {
-    setTimeout(() => {
-      sendRealNotification("🤖 HIROKO Siap!", "Tuan, HIROKO sudah siap mengirim notifikasi kapan saja. Aktifkan di pengaturan ya!", "https://files.catbox.moe/defcsh.jpg");
-    }, 3000);
-  }
-});
-
-// ========== FUNGSI DETAIL SETTINGS (SUB-MENU) ==========
-function showSettingsDetail(section) {
-  if (section === "konektor") {
-    const isOwner = currentUser && (currentUser.role === "owner" || currentUser.role === "PartnerOwner");
-    if (!isOwner) {
-      showToast("❌ Akses ditolak! Menu ini hanya untuk Owner!", true);
-      // Balik ke menu settings
-      openSettings();
-      return;
-    }
-  }
-  
-  // Hapus modal lama
-  const oldModal = document.getElementById("settings-modal");
-  if (oldModal) oldModal.remove();
-  
-  let title = "", content = "";
-  
-  switch(section) {
-    case "profil":
-      title = "Profil";
-      content = `
-        <div style="text-align:center; margin-bottom:20px;">
-          <div id="profile-avatar-click" style="width:80px; height:80px; background:#e8f0e8; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden;">
-            <img id="detail-profile-img" src="${localStorage.getItem(`avatar_${currentUser.username}`) || 'https://ui-avatars.com/api/?background=2d6a4f&color=fff&bold=true&size=80&name=' + encodeURIComponent(currentUser.name || currentUser.username)}" style="width:100%; height:100%; object-fit:cover;">
-          </div>
-          <div style="font-size:11px; color:#9ca3af; cursor:pointer;" onclick="document.getElementById('profile-pic-input').click()">
-            <i class="fas fa-camera"></i> Ganti foto profil
-          </div>
-        </div>
-        <div class="settings-group">
-          <label class="settings-label"><i class="fas fa-user"></i> Nama Lengkap</label>
-          <input type="text" id="settings-name-detail" class="settings-input" value="${escapeHtml(currentUser.name || '')}">
-        </div>
-        <div class="settings-group">
-          <label class="settings-label"><i class="fas fa-at"></i> Username</label>
-          <input type="text" id="settings-username-detail" class="settings-input" value="${escapeHtml(currentUser.username || '')}" readonly style="background:#f0f0f0;">
-        </div>
-        <div class="settings-group">
-          <label class="settings-label"><i class="fas fa-envelope"></i> Email</label>
-          <input type="email" id="settings-email-detail" class="settings-input" value="${escapeHtml(currentUser.email || '')}">
-        </div>
-        <div class="settings-group">
-          <label class="settings-label"><i class="fas fa-lock"></i> Password Baru</label>
-          <input type="password" id="settings-password-detail" class="settings-input" placeholder="Kosongkan jika tidak diubah">
-        </div>
-        <button class="settings-btn" onclick="saveSettingsDetail()"><i class="fas fa-save"></i> Simpan Perubahan</button>
-      `;
-      break;
-      
-    case "penagihan":
-      title = "Penagihan";
-      content = `
-        <div style="background:${currentUser.premium ? '#e8f0e8' : '#fef3c7'}; border-radius:16px; padding:20px; text-align:center; margin-bottom:20px;">
-          <i class="fas ${currentUser.premium ? 'fa-crown' : 'fa-tag'}" style="font-size:36px; color:${currentUser.premium ? '#2d6a4f' : '#f59e0b'}; margin-bottom:12px; display:block;"></i>
-          <h3 style="margin:0 0 4px 0; color:#1a1a1a;">${currentUser.premium ? 'Premium ✦ Aktif' : 'Free Plan'}</h3>
-          <p style="font-size:12px; color:#6b6b6b; margin-bottom:0;">
-            ${currentUser.premium ? 'Terima kasih telah mendukung HIROKO!' : 'Upgrade ke Premium untuk akses unlimited + Mode Code & Math'}
-          </p>
-        </div>
-        ${!currentUser.premium ? '<button class="settings-btn" style="background:#f59e0b; color:#fff;" onclick="closeSettingsModal(); openPremiumModal();"><i class="fas fa-gem"></i> Upgrade Sekarang</button>' : ''}
-        <div style="margin-top:20px; padding-top:20px; border-top:1px solid #e5e5e5;">
-          <div class="settings-group">
-            <label class="settings-label"><i class="fas fa-ticket-alt"></i> Kode Premium</label>
-            <input type="text" id="premium-code-detail" class="settings-input" placeholder="Masukkan kode aktivasi...">
-            <button class="settings-btn" style="margin-top:10px;" onclick="activatePremiumFromDetail()"><i class="fas fa-unlock-alt"></i> Aktivasi</button>
-          </div>
-        </div>
-      `;
-      break;
-      
-    case "kemampuan":
-      title = "Kemampuan AI";
-      content = `
-        <div class="settings-group">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-            <span><i class="fas fa-comment"></i> Mode Normal</span>
-            <span class="mode-status-badge" data-mode="normal" style="padding:4px 12px; border-radius:20px; font-size:11px; background:#e8f0e8; color:#2d6a4f;">${currentMode === 'normal' ? 'AKTIF' : 'TIDAK AKTIF'}</span>
-          </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-            <span><i class="fas fa-bolt"></i> Mode Faster (Haiku)</span>
-            <span class="mode-status-badge" data-mode="faster" style="padding:4px 12px; border-radius:20px; font-size:11px; background:#e8f0e8; color:#2d6a4f;">${currentMode === 'faster' ? 'AKTIF' : 'TIDAK AKTIF'}</span>
-          </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-            <span><i class="fas fa-code"></i> Mode Code ${!isPremium ? '<span style="font-size:10px; color:#f59e0b;">(Premium)</span>' : ''}</span>
-            <span class="mode-status-badge" data-mode="code" style="padding:4px 12px; border-radius:20px; font-size:11px; background:${currentMode === 'code' ? '#2d6a4f' : '#f0f0f0'}; color:${currentMode === 'code' ? 'white' : '#6b6b6b'};">${currentMode === 'code' ? 'AKTIF' : (isPremium ? 'TIDAK AKTIF' : 'TERKUNCI')}</span>
-          </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-            <span><i class="fas fa-calculator"></i> Mode Math ${!isPremium ? '<span style="font-size:10px; color:#f59e0b;">(Premium)</span>' : ''}</span>
-            <span class="mode-status-badge" data-mode="math" style="padding:4px 12px; border-radius:20px; font-size:11px; background:${currentMode === 'math' ? '#2d6a4f' : '#f0f0f0'}; color:${currentMode === 'math' ? 'white' : '#6b6b6b'};">${currentMode === 'math' ? 'AKTIF' : (isPremium ? 'TIDAK AKTIF' : 'TERKUNCI')}</span>
-          </div>
-        </div>
-        <div class="settings-group">
-          <label class="settings-label"><i class="fas fa-microchip"></i> Default Mode Chat</label>
-          <select id="default-mode-select" class="settings-input" onchange="changeDefaultMode(this.value)">
-            <option value="normal" ${currentMode === 'normal' ? 'selected' : ''}>Normal</option>
-            <option value="faster" ${currentMode === 'faster' ? 'selected' : ''}>Faster (Haiku)</option>
-            <option value="code" ${currentMode === 'code' ? 'selected' : ''} ${!isPremium ? 'disabled' : ''}>Code ${!isPremium ? '(Premium)' : ''}</option>
-            <option value="math" ${currentMode === 'math' ? 'selected' : ''} ${!isPremium ? 'disabled' : ''}>Math ${!isPremium ? '(Premium)' : ''}</option>
-          </select>
-        </div>
-      `;
-      break;
-      
-    case "konektor":
-      title = "Konektor API";
-      content = `
-        
-        
-        <div style="margin-bottom: 16px;">
-          <div class="owner-badge">
-            <i class="fas fa-shield-alt"></i> Owner Only Access
-          </div>
-          <p style="font-size: 12px; color: #6b6b6b; margin-top: 8px;">
-            <i class="fas fa-info-circle"></i> Halaman ini hanya dapat diakses oleh Owner/Partner Owner untuk keamanan API Keys.
-          </p>
-        </div>
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #e0f2fe;"><i class="fas fa-star-of-life" style="color: #0284c7;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">Gemini API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Untuk mode Normal & Faster</div>
-            </div>
-            <span class="api-status" id="gemini-status">CHECK</span>
-          </div>
-          <input type="password" id="gemini-api-input" class="settings-input" placeholder="AIza..." value="${localStorage.getItem('hiroko_user_key') || ''}" style="margin-bottom: 8px;">
-          <button class="settings-btn" onclick="saveApiKeyConnector('gemini')"><i class="fas fa-save"></i> Simpan Gemini</button>
-        </div>
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #f3e8ff;"><i class="fas fa-bolt" style="color: #9333ea;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">Groq API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Untuk mode Faster (Haiku)</div>
-            </div>
-            <span class="api-status" id="groq-status">CHECK</span>
-          </div>
-          <input type="password" id="groq-api-input" class="settings-input" placeholder="gsk_..." value="${localStorage.getItem('hiroko_groq_key') || ''}" style="margin-bottom: 8px;">
-          <button class="settings-btn" onclick="saveApiKeyConnector('groq')"><i class="fas fa-save"></i> Simpan Groq</button>
-        </div>
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #d1fae5;"><i class="fas fa-feather-alt" style="color: #059669;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">Claude API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Untuk mode Math</div>
-            </div>
-            <span class="api-status" id="claude-status">CHECK</span>
-          </div>
-          <input type="password" id="claude-api-input" class="settings-input" placeholder="sk-ant-api..." value="${localStorage.getItem('hiroko_claude_key') || ''}" style="margin-bottom: 8px;">
-          <button class="settings-btn" onclick="saveApiKeyConnector('claude')"><i class="fas fa-save"></i> Simpan Claude</button>
-        </div>
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #fef3c7;"><i class="fas fa-database" style="color: #d97706;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">DeepSeek API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Fallback untuk mode Normal</div>
-            </div>
-            <span class="api-status" id="deepseek-status">DEFAULT</span>
-          </div>
-          <div style="font-size: 12px; color: #9ca3af; padding: 8px 0;">Menggunakan key bawaan sistem</div>
-        </div>
-      `;
-      
-      // Update status API setelah render
-      setTimeout(() => {
-        updateApiStatusInSettings();
-      }, 500);
-      break;
-      
-    case "warna":
-      title = "Mode Warna";
-      content = `
-        <div class="settings-group">
-          <div onclick="changeTheme('light')" style="display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #e5e5e5; border-radius:12px; margin-bottom:10px; cursor:pointer;">
-            <i class="fas fa-sun" style="font-size:20px; color:#f59e0b;"></i>
-            <div><strong>Terang</strong><div style="font-size:11px; color:#6b6b6b;">Mode terang untuk siang hari</div></div>
-          </div>
-          <div onclick="changeTheme('dark')" style="display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #e5e5e5; border-radius:12px; margin-bottom:10px; cursor:pointer;">
-            <i class="fas fa-moon" style="font-size:20px; color:#1e293b;"></i>
-            <div><strong>Gelap</strong><div style="font-size:11px; color:#6b6b6b;">Mode gelap untuk malam hari</div></div>
-          </div>
-          <div onclick="changeTheme('system')" style="display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #e5e5e5; border-radius:12px; cursor:pointer;">
-            <i class="fas fa-desktop" style="font-size:20px; color:#0284c7;"></i>
-            <div><strong>Sistem</strong><div style="font-size:11px; color:#6b6b6b;">Ikuti tema perangkat</div></div>
-          </div>
-        </div>
-      `;
-      break;
-      
-    default:
-      title = "Pengaturan";
-      content = `<p style="text-align:center; color:#6b6b6b;">Fitur sedang dalam pengembangan</p>`;
-  }
-  
-  const detailHtml = `
-  <div id="settings-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:2000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
-    <div style="background:#ffffff; border-radius:28px; width:90%; max-width:400px; max-height:85vh; overflow-y:auto; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
-      
-      <div style="padding:20px 24px; border-bottom:1px solid #e5e5e5; display:flex; align-items:center; gap:12px;">
-        <button id="back-to-menu" style="background:none; border:none; cursor:pointer; color:#2d6a4f;">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <h3 style="margin:0; font-size:18px; font-weight:600; color:#1a1a1a;">${title}</h3>
-      </div>
-      
-      <div style="padding:24px;">
-        ${content}
-      </div>
-      
-    </div>
-  </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', detailHtml);
-  
-  document.getElementById("back-to-menu").onclick = () => {
-    document.getElementById("settings-modal").remove();
-    openSettings();
-  };
-  
-  document.getElementById("settings-modal").onclick = (e) => {
-    if (e.target === document.getElementById("settings-modal")) {
-      document.getElementById("settings-modal").remove();
+      reader.readAsDataURL(file);
     }
   };
+  input.click();
 }
 
-// Helper functions
-function saveSettingsDetail() {
-  const newName = document.getElementById("settings-name-detail")?.value.trim();
-  const newEmail = document.getElementById("settings-email-detail")?.value.trim();
-  const newPassword = document.getElementById("settings-password-detail")?.value.trim();
-  
+function saveSettings() {
+  if (!currentUser) { showToast("❌ Silakan login terlebih dahulu!", true); return; }
+  const newName = document.getElementById("settings-name").value.trim();
+  const newEmail = document.getElementById("settings-email").value.trim();
+  const newPassword = document.getElementById("settings-password").value.trim();
   const userIndex = users.findIndex(u => u.username === currentUser.username);
   if (userIndex !== -1) {
     if (newName) users[userIndex].name = newName;
@@ -2348,204 +1371,22 @@ function saveSettingsDetail() {
     localStorage.setItem("hiroko_current_user", JSON.stringify(currentUser));
     updateUserUI();
     showToast("✅ Pengaturan berhasil disimpan!", false);
-    document.getElementById("settings-modal").remove();
-    openSettings();
-  }
-}
-
-// ========== SIMPAN API KEY DARI MENU KONEKTOR ==========
-function saveApiKeyConnector(type) {
-  if (type === 'gemini') {
-    const key = document.getElementById("gemini-api-input")?.value.trim();
-    if (key) localStorage.setItem("hiroko_user_key", key);
-    else localStorage.removeItem("hiroko_user_key");
-    showToast("✅ Gemini API Key disimpan", false);
-  } else if (type === 'groq') {
-    const key = document.getElementById("groq-api-input")?.value.trim();
-    if (key) localStorage.setItem("hiroko_groq_key", key);
-    else localStorage.removeItem("hiroko_groq_key");
-    showToast("✅ Groq API Key disimpan", false);
-  } else if (type === 'claude') {
-    const key = document.getElementById("claude-api-input")?.value.trim();
-    if (key) localStorage.setItem("hiroko_claude_key", key);
-    else localStorage.removeItem("hiroko_claude_key");
-    showToast("✅ Claude API Key disimpan", false);
-  }
-  updateApiStatusInSettings();
-}
-
-// ========== UPDATE STATUS API DI MENU KONEKTOR ==========
-async function updateApiStatusInSettings() {
-  const geminiKey = localStorage.getItem("hiroko_user_key");
-  const groqKey = localStorage.getItem("hiroko_groq_key");
-  const claudeKey = localStorage.getItem("hiroko_claude_key");
-  
-  const geminiStatus = document.getElementById("gemini-status");
-  const groqStatus = document.getElementById("groq-status");
-  const claudeStatus = document.getElementById("claude-status");
-  
-  if (geminiStatus) {
-    if (!geminiKey) {
-      geminiStatus.textContent = "NO KEY";
-      geminiStatus.className = "api-status inactive";
-    } else {
-      geminiStatus.textContent = "CHECK";
-      geminiStatus.className = "api-status";
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(`${GEMINI_BASE}/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok || res.status === 400) {
-          geminiStatus.textContent = "ACTIVE";
-          geminiStatus.className = "api-status active";
-        } else {
-          geminiStatus.textContent = "ERROR";
-          geminiStatus.className = "api-status inactive";
-        }
-      } catch(e) {
-        geminiStatus.textContent = "OFFLINE";
-        geminiStatus.className = "api-status inactive";
-      }
-    }
-  }
-  
-  if (groqStatus) {
-    if (!groqKey) {
-      groqStatus.textContent = "NO KEY";
-      groqStatus.className = "api-status inactive";
-    } else {
-      groqStatus.textContent = "CHECK";
-      groqStatus.className = "api-status";
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(GROQ_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
-          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          groqStatus.textContent = "ACTIVE";
-          groqStatus.className = "api-status active";
-        } else {
-          groqStatus.textContent = "ERROR";
-          groqStatus.className = "api-status inactive";
-        }
-      } catch(e) {
-        groqStatus.textContent = "OFFLINE";
-        groqStatus.className = "api-status inactive";
-      }
-    }
-  }
-  
-  if (claudeStatus) {
-    if (!claudeKey) {
-      claudeStatus.textContent = "NO KEY";
-      claudeStatus.className = "api-status inactive";
-    } else {
-      claudeStatus.textContent = "CHECK";
-      claudeStatus.className = "api-status";
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(CLAUDE_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
-          body: JSON.stringify({ model: 'claude-3-haiku-20240307', messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          claudeStatus.textContent = "ACTIVE";
-          claudeStatus.className = "api-status active";
-        } else {
-          claudeStatus.textContent = "ERROR";
-          claudeStatus.className = "api-status inactive";
-        }
-      } catch(e) {
-        claudeStatus.textContent = "OFFLINE";
-        claudeStatus.className = "api-status inactive";
-      }
-    }
-  }
-}
-
-function changeDefaultMode(mode) {
-  if ((mode === 'code' || mode === 'math') && !isPremium) {
-    showToast("❌ Mode Premium harus upgrade dulu!", true);
-    return;
-  }
-  setMode(mode);
-  showToast(`✅ Mode diubah ke ${mode}`, false);
-  document.getElementById("settings-modal")?.remove();
-  openSettings();
-}
-
-function changeTheme(theme) {
-  if (theme === 'light') {
-    document.body.style.background = "#f9f9f9";
-    document.body.style.color = "#1a1a1a";
-  } else if (theme === 'dark') {
-    document.body.style.background = "#050810";
-    document.body.style.color = "#f0f4ff";
+    document.getElementById("settings-password").value = "";
   } else {
-    // system - deteksi preferensi OS
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.body.style.background = "#050810";
-      document.body.style.color = "#f0f4ff";
-    } else {
-      document.body.style.background = "#f9f9f9";
-      document.body.style.color = "#1a1a1a";
-    }
-  }
-  localStorage.setItem("hiroko_theme", theme);
-  showToast(`🎨 Tema diubah ke ${theme}`, false);
-  document.getElementById("settings-modal")?.remove();
-  openSettings();
-}
-
-function activatePremiumFromDetail() {
-  const code = document.getElementById("premium-code-detail")?.value.trim().toUpperCase();
-  if (!code) { showToast("Masukkan kode dulu!", true); return; }
-  const foundCode = premiumCodesStore.find(c => c.code === code && !c.used);
-  if (foundCode || code === PREMIUM_CODE) {
-    if (foundCode) {
-      foundCode.used = true;
-      foundCode.usedBy = currentUser?.username;
-      foundCode.usedAt = new Date().toISOString();
-      localStorage.setItem("hiroko_premium_codes", JSON.stringify(premiumCodesStore));
-    }
-    isPremium = true;
-    localStorage.setItem("hiroko_premium", "true");
-    if (currentUser) {
-      currentUser.premium = true;
-      users = users.map(u => u.username === currentUser.username ? { ...u, premium: true } : u);
-      localStorage.setItem("hiroko_users", JSON.stringify(users));
-      localStorage.setItem("hiroko_current_user", JSON.stringify(currentUser));
-    }
-    showToast("✦ Premium aktif! Welcome 🔥", false);
-    document.getElementById("settings-modal")?.remove();
-    updatePlanUI();
-    updateCounter();
-  } else {
-    showToast("❌ Kode salah atau sudah kadaluarsa!", true);
+    showToast("❌ Gagal menyimpan pengaturan!", true);
   }
 }
 
-function closeSettingsModal() {
-  document.getElementById("settings-modal")?.remove();
+function showThemeSelector() {
+  const themes = ['dark', 'light', 'blue'];
+  let currentTheme = localStorage.getItem("hiroko_theme") || "dark";
+  let nextTheme = themes[(themes.indexOf(currentTheme) + 1) % themes.length];
+  localStorage.setItem("hiroko_theme", nextTheme);
+  showToast(`🎨 Tema diubah ke ${nextTheme}`, false);
+  location.reload();
 }
 
-// Override function exportData dan deleteAccount biar tetap jalan
-window.exportData = function() {
+function exportData() {
   if (!sessions || sessions.length === 0) { showToast("❌ Tidak ada data chat untuk diekspor!", true); return; }
   const exportData = { user: currentUser, sessions: sessions, exportDate: new Date().toISOString() };
   const dataStr = JSON.stringify(exportData, null, 2);
@@ -2557,9 +1398,9 @@ window.exportData = function() {
   a.click();
   URL.revokeObjectURL(url);
   showToast("✅ Data chat berhasil diekspor!", false);
-};
+}
 
-window.deleteAccount = function() {
+function deleteAccount() {
   if (!currentUser) return;
   if (confirm(`⚠️ Yakin ingin menghapus akun "${currentUser.username}"? Data tidak dapat dikembalikan!`)) {
     users = users.filter(u => u.username !== currentUser.username);
@@ -2569,1022 +1410,7 @@ window.deleteAccount = function() {
     logout();
     alert("Akun Anda telah dihapus.");
   }
-};
-
-// ========== SETTINGS DETAIL - VERSION KOMPLIT ==========
-function showSettingsDetail(section) {
-  // Hapus modal lama
-  const oldModal = document.getElementById("settings-modal");
-  if (oldModal) oldModal.remove();
-  
-  let title = "", content = "";
-  
-  switch(section) {
-    // ==================== PROFIL LENGKAP ====================
-    case "profil":
-  title = "Edit Profil";
-  const savedAvatarProfil = localStorage.getItem(`avatar_${currentUser.username}`);
-  const avatarUrlProfil = savedAvatarProfil || `https://ui-avatars.com/api/?background=2d6a4f&color=fff&bold=true&size=120&name=${encodeURIComponent(currentUser.name || currentUser.username)}`;
-  
-  content = `
-    
-    
-    <div class="profile-edit-container">
-      
-      <!-- Avatar dengan overlay edit -->
-      <div class="profile-avatar-edit" onclick="document.getElementById('profile-pic-edit-input').click()">
-        <img id="profile-edit-avatar-img" src="${avatarUrlProfil}" alt="Profile">
-        <div class="avatar-edit-overlay">
-          <i class="fas fa-camera" style="font-size: 14px;"></i>
-        </div>
-      </div>
-      <input type="file" id="profile-pic-edit-input" accept="image/*" style="display: none;">
-      <div class="profile-delete-photo" onclick="deleteProfilePhoto()">
-        <i class="fas fa-trash-alt"></i> Hapus foto profil
-      </div>
-      
-      <!-- Form Edit Profil -->
-      <div class="profile-field-group">
-        <label><i class="fas fa-user-circle"></i> Nama Lengkap</label>
-        <input type="text" id="edit-fullname" value="${escapeHtml(currentUser.name || '')}" placeholder="Masukkan nama lengkap">
-      </div>
-      
-      <div class="profile-field-group">
-        <label><i class="fas fa-at"></i> Username</label>
-        <input type="text" id="edit-username" value="${escapeHtml(currentUser.username || '')}" placeholder="Username">
-        <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">
-          <i class="fas fa-info-circle"></i> Username bisa diubah, digunakan untuk login
-        </div>
-      </div>
-      
-      <div class="profile-field-group">
-        <label><i class="fas fa-envelope"></i> Email / Gmail</label>
-        <input type="email" id="edit-email" value="${escapeHtml(currentUser.email || '')}" placeholder="email@example.com">
-      </div>
-      
-      <div class="profile-field-group">
-        <label><i class="fas fa-lock"></i> Password Baru</label>
-        <input type="password" id="edit-password" placeholder="Kosongkan jika tidak diubah">
-        <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">
-          <i class="fas fa-shield-alt"></i> Minimal 6 karakter
-        </div>
-      </div>
-      
-      <div class="profile-field-group">
-        <label><i class="fas fa-key"></i> Konfirmasi Password Baru</label>
-        <input type="password" id="edit-password-confirm" placeholder="Ketik ulang password baru">
-      </div>
-      
-      <div class="info-badge">
-        <i class="fas fa-id-card"></i> Role: ${currentUser.role === 'owner' ? '👑 Owner' : (currentUser.role === 'PartnerOwner' ? '🤝 Partner Owner' : (currentUser.premium ? '⭐ Premium User' : '🔓 Free User'))}
-      </div>
-      
-      <button class="profile-save-btn" onclick="saveProfileEdit()">
-        <i class="fas fa-save"></i> Simpan Perubahan
-      </button>
-      
-    </div>
-  `;
-  break;
-    
-    // ==================== PENAGIHAN / PREMIUM ====================
-    case "penagihan":
-      title = "Penagihan";
-      content = `
-        
-        
-        <div class="billing-card">
-          <div class="billing-icon">
-            <i class="fas ${currentUser.premium ? 'fa-crown' : 'fa-tag'}" style="color: ${currentUser.premium ? '#2d6a4f' : '#f59e0b'}"></i>
-          </div>
-          <div class="billing-title">${currentUser.premium ? 'PREMIUM ACTIVE' : 'FREE PLAN'}</div>
-          <div class="billing-desc">${currentUser.premium ? 'Akses unlimited ke semua fitur HIROKO' : 'Upgrade untuk akses Mode Code, Math, & Unlimited Chat'}</div>
-        </div>
-        
-        <div class="feature-list">
-          <div class="feature-item">
-            <i class="fas fa-check-circle" style="color: #2d6a4f;"></i>
-            <span style="flex:1;">Mode Normal & Faster (Haiku)</span>
-            <i class="fas fa-check" style="color: #2d6a4f;"></i>
-          </div>
-          <div class="feature-item">
-            <i class="fas fa-code" style="color: ${currentUser.premium ? '#2d6a4f' : '#9ca3af'}"></i>
-            <span style="flex:1;">Mode Code (Expert Coding)</span>
-            ${currentUser.premium ? '<i class="fas fa-check" style="color: #2d6a4f;"></i>' : '<i class="fas fa-lock" style="color: #f59e0b;"></i>'}
-          </div>
-          <div class="feature-item">
-            <i class="fas fa-calculator" style="color: ${currentUser.premium ? '#2d6a4f' : '#9ca3af'}"></i>
-            <span style="flex:1;">Mode Math (Genius Matematika)</span>
-            ${currentUser.premium ? '<i class="fas fa-check" style="color: #2d6a4f;"></i>' : '<i class="fas fa-lock" style="color: #f59e0b;"></i>'}
-          </div>
-          <div class="feature-item">
-            <i class="fas fa-infinity" style="color: ${currentUser.premium ? '#2d6a4f' : '#9ca3af'}"></i>
-            <span style="flex:1;">Chat Unlimited</span>
-            ${currentUser.premium ? '<i class="fas fa-check" style="color: #2d6a4f;"></i>' : '<i class="fas fa-lock" style="color: #f59e0b;"></i>'}
-          </div>
-          <div class="feature-item">
-            <i class="fas fa-history" style="color: ${currentUser.premium ? '#2d6a4f' : '#9ca3af'}"></i>
-            <span style="flex:1;">Riwayat Chat 100+ Session</span>
-            ${currentUser.premium ? '<i class="fas fa-check" style="color: #2d6a4f;"></i>' : '<i class="fas fa-lock" style="color: #f59e0b;"></i>'}
-          </div>
-        </div>
-        
-        ${!currentUser.premium ? `
-          <div style="margin-bottom: 16px;">
-            <label style="font-size: 12px; font-weight: 500; color: #6b6b6b; display: block; margin-bottom: 6px;">
-              <i class="fas fa-ticket-alt"></i> Kode Aktivasi Premium
-            </label>
-            <input type="text" id="premium-code-billing" class="settings-input" placeholder="Masukkan kode premium..." style="margin-bottom: 10px;">
-            <button class="settings-btn" style="background: #f59e0b; color: white;" onclick="activatePremiumFromBilling()">
-              <i class="fas fa-unlock-alt"></i> Aktivasi Sekarang
-            </button>
-          </div>
-        ` : ''}
-        
-        <button class="settings-btn" onclick="closeSettingsModal(); openPremiumModal();" style="background: #2d6a4f; color: white;">
-          <i class="fas fa-shopping-cart"></i> ${currentUser.premium ? 'Kelola Langganan' : 'Beli Premium'}
-        </button>
-      `;
-      break;
-    
-    // ==================== KEMAMPUAN AI ====================
-    case "kemampuan":
-      title = "Kemampuan AI";
-      content = `
-        
-        
-        <div class="ability-card ${currentMode === 'normal' ? 'active' : ''}" onclick="changeModeFromSettings('normal')" style="cursor: pointer;">
-          <div class="ability-header">
-            <div class="ability-name"><i class="fas fa-comment"></i> Mode Normal</div>
-            <div class="ability-badge ${currentMode === 'normal' ? 'active' : 'free'}">${currentMode === 'normal' ? 'AKTIF' : 'TIDAK AKTIF'}</div>
-          </div>
-          <div class="ability-desc">AI serba bisa untuk percakapan sehari-hari</div>
-        </div>
-        
-        <div class="ability-card ${currentMode === 'faster' ? 'active' : ''}" onclick="changeModeFromSettings('faster')" style="cursor: pointer;">
-          <div class="ability-header">
-            <div class="ability-name"><i class="fas fa-bolt"></i> Mode Faster (Haiku)</div>
-            <div class="ability-badge ${currentMode === 'faster' ? 'active' : 'free'}">${currentMode === 'faster' ? 'AKTIF' : 'TIDAK AKTIF'}</div>
-          </div>
-          <div class="ability-desc">Respons super cepat untuk pertanyaan sederhana</div>
-        </div>
-        
-        <div class="ability-card ${currentMode === 'code' ? 'active' : ''}" onclick="changeModeFromSettings('code')" style="cursor: pointer; ${!isPremium ? 'opacity: 0.6;' : ''}">
-          <div class="ability-header">
-            <div class="ability-name"><i class="fas fa-code"></i> Mode Code</div>
-            <div class="ability-badge ${currentMode === 'code' ? 'active' : (isPremium ? 'free' : 'premium')}">${currentMode === 'code' ? 'AKTIF' : (isPremium ? 'TIDAK AKTIF' : 'PREMIUM')}</div>
-          </div>
-          <div class="ability-desc">Expert coding, debugging, dan code review</div>
-        </div>
-        
-        <div class="ability-card ${currentMode === 'math' ? 'active' : ''}" onclick="changeModeFromSettings('math')" style="cursor: pointer; ${!isPremium ? 'opacity: 0.6;' : ''}">
-          <div class="ability-header">
-            <div class="ability-name"><i class="fas fa-calculator"></i> Mode Math</div>
-            <div class="ability-badge ${currentMode === 'math' ? 'active' : (isPremium ? 'free' : 'premium')}">${currentMode === 'math' ? 'AKTIF' : (isPremium ? 'TIDAK AKTIF' : 'PREMIUM')}</div>
-          </div>
-          <div class="ability-desc">Genius matematika dengan step-by-step</div>
-        </div>
-        
-        ${!isPremium ? `
-          <div style="background: #fef3c7; border-radius: 12px; padding: 12px; margin-top: 16px; text-align: center;">
-            <i class="fas fa-gem" style="color: #f59e0b;"></i>
-            <span style="font-size: 12px; color: #92400e;"> Mode Code & Math hanya untuk Premium</span>
-            <button class="settings-btn" style="margin-top: 8px; background: #f59e0b; color: white;" onclick="closeSettingsModal(); openPremiumModal();">
-              Upgrade Sekarang
-            </button>
-          </div>
-        ` : ''}
-      `;
-      break;
-    
-    // ==================== KONEKTOR API ====================
-    case "konektor":
-      title = "Konektor API";
-      content = `
-        
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #e0f2fe;"><i class="fas fa-star-of-life" style="color: #0284c7;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">Gemini API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Untuk mode Normal & Faster</div>
-            </div>
-            <span class="api-status" id="gemini-status">CHECK</span>
-          </div>
-          <input type="password" id="gemini-api-input" class="settings-input" placeholder="AIza..." value="${localStorage.getItem('hiroko_user_key') || ''}" style="margin-bottom: 8px;">
-          <button class="settings-btn" onclick="saveApiKeyConnector('gemini')"><i class="fas fa-save"></i> Simpan Gemini</button>
-        </div>
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #f3e8ff;"><i class="fas fa-bolt" style="color: #9333ea;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">Groq API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Untuk mode Faster (Haiku)</div>
-            </div>
-            <span class="api-status" id="groq-status">CHECK</span>
-          </div>
-          <input type="password" id="groq-api-input" class="settings-input" placeholder="gsk_..." value="${localStorage.getItem('hiroko_groq_key') || ''}" style="margin-bottom: 8px;">
-          <button class="settings-btn" onclick="saveApiKeyConnector('groq')"><i class="fas fa-save"></i> Simpan Groq</button>
-        </div>
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #d1fae5;"><i class="fas fa-feather-alt" style="color: #059669;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">Claude API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Untuk mode Math</div>
-            </div>
-            <span class="api-status" id="claude-status">CHECK</span>
-          </div>
-          <input type="password" id="claude-api-input" class="settings-input" placeholder="sk-ant-api..." value="${localStorage.getItem('hiroko_claude_key') || ''}" style="margin-bottom: 8px;">
-          <button class="settings-btn" onclick="saveApiKeyConnector('claude')"><i class="fas fa-save"></i> Simpan Claude</button>
-        </div>
-        
-        <div class="api-card">
-          <div class="api-header">
-            <div class="api-icon" style="background: #fef3c7;"><i class="fas fa-database" style="color: #d97706;"></i></div>
-            <div style="flex:1;">
-              <div style="font-weight: 600;">DeepSeek API</div>
-              <div style="font-size: 11px; color: #6b6b6b;">Fallback untuk mode Normal</div>
-            </div>
-            <span class="api-status" id="deepseek-status">DEFAULT</span>
-          </div>
-          <div style="font-size: 12px; color: #9ca3af; padding: 8px 0;">Menggunakan key bawaan sistem</div>
-        </div>
-      `;
-      break;
-    
-    // ==================== IZIN & PRIVASI ====================
-    case "izin":
-      title = "Izin & Privasi";
-      content = `
-        
-        
-        <div class="permission-item">
-          <div>
-            <div style="font-weight: 500;"><i class="fas fa-microphone"></i> Akses Mikrofon</div>
-            <div style="font-size: 11px; color: #6b6b6b;">Untuk fitur voice input</div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="mic-permission" ${localStorage.getItem('mic_permission') === 'true' ? 'checked' : ''} onchange="togglePermission('mic')">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div class="permission-item">
-          <div>
-            <div style="font-weight: 500;"><i class="fas fa-camera"></i> Akses Kamera</div>
-            <div style="font-size: 11px; color: #6b6b6b;">Untuk fitur upload foto</div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="camera-permission" ${localStorage.getItem('camera_permission') === 'true' ? 'checked' : ''} onchange="togglePermission('camera')">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div class="permission-item">
-          <div>
-            <div style="font-weight: 500;"><i class="fas fa-bell"></i> Notifikasi</div>
-            <div style="font-size: 11px; color: #6b6b6b;">Pemberitahuan dari HIROKO</div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="notif-permission" ${localStorage.getItem('notif_permission') === 'true' ? 'checked' : ''} onchange="togglePermission('notif')">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div class="permission-item">
-          <div>
-            <div style="font-weight: 500;"><i class="fas fa-database"></i> Penyimpanan Lokal</div>
-            <div style="font-size: 11px; color: #6b6b6b;">Menyimpan data chat di browser</div>
-          </div>
-          <span style="font-size: 12px; color: #2d6a4f;"><i class="fas fa-check-circle"></i> AKTIF</span>
-        </div>
-        
-        <div style="margin-top: 20px;">
-          <button class="settings-btn" onclick="clearAllData()" style="background: #fee2e2; color: #dc2626;">
-            <i class="fas fa-trash-alt"></i> Hapus Semua Data Chat
-          </button>
-          <button class="settings-btn" onclick="exportData()" style="margin-top: 8px;">
-            <i class="fas fa-download"></i> Ekspor Data Chat
-          </button>
-        </div>
-      `;
-      break;
-    
-    // ==================== MODE WARNA ====================
-    case "warna":
-      title = "Mode Warna";
-      const currentTheme = localStorage.getItem("hiroko_theme") || "system";
-      content = `
-        
-        
-        <div class="theme-option ${currentTheme === 'light' ? 'selected' : ''}" onclick="changeThemeSetting('light')">
-          <div class="theme-preview" style="background: #ffffff; border: 1px solid #e5e5e5;">
-            <i class="fas fa-sun" style="color: #f59e0b; font-size: 24px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight: 600;">Mode Terang</div>
-            <div style="font-size: 11px; color: #6b6b6b;">Tampilan cerah untuk siang hari</div>
-          </div>
-          ${currentTheme === 'light' ? '<i class="fas fa-check-circle" style="color: #2d6a4f;"></i>' : ''}
-        </div>
-        
-        <div class="theme-option ${currentTheme === 'dark' ? 'selected' : ''}" onclick="changeThemeSetting('dark')">
-          <div class="theme-preview" style="background: #1a1a2e;">
-            <i class="fas fa-moon" style="color: #f0f4ff; font-size: 24px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight: 600;">Mode Gelap</div>
-            <div style="font-size: 11px; color: #6b6b6b;">Tampilan gelap untuk malam hari</div>
-          </div>
-          ${currentTheme === 'dark' ? '<i class="fas fa-check-circle" style="color: #2d6a4f;"></i>' : ''}
-        </div>
-        
-        <div class="theme-option ${currentTheme === 'system' ? 'selected' : ''}" onclick="changeThemeSetting('system')">
-          <div class="theme-preview" style="background: linear-gradient(135deg, #f0f4ff, #1a1a2e);">
-            <i class="fas fa-desktop" style="color: #0284c7; font-size: 24px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight: 600;">Mode Sistem</div>
-            <div style="font-size: 11px; color: #6b6b6b;">Ikuti tema perangkat</div>
-          </div>
-          ${currentTheme === 'system' ? '<i class="fas fa-check-circle" style="color: #2d6a4f;"></i>' : ''}
-        </div>
-      `;
-      break;
-    
-    // ==================== GAYA FONT ====================
-    case "font":
-      title = "Gaya Font";
-      const currentFont = localStorage.getItem("hiroko_font") || "default";
-      content = `
-        <div class="font-option" data-font="default" onclick="changeFont('default')" style="padding: 16px; border: 1px solid ${currentFont === 'default' ? '#2d6a4f' : '#e5e5e5'}; border-radius: 16px; margin-bottom: 12px; cursor: pointer; background: ${currentFont === 'default' ? '#e8f0e8' : '#ffffff'};">
-          <div style="font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500;">Default (Inter)</div>
-          <div style="font-size: 12px; color: #6b6b6b;">Tampilan standar HIROKO</div>
-        </div>
-        <div class="font-option" data-font="mono" onclick="changeFont('mono')" style="padding: 16px; border: 1px solid ${currentFont === 'mono' ? '#2d6a4f' : '#e5e5e5'}; border-radius: 16px; margin-bottom: 12px; cursor: pointer; background: ${currentFont === 'mono' ? '#e8f0e8' : '#ffffff'};">
-          <div style="font-family: 'Courier New', monospace; font-size: 16px; font-weight: 500;">Monospace</div>
-          <div style="font-size: 12px; color: #6b6b6b;">Gaya kode programmer</div>
-        </div>
-        <div class="font-option" data-font="sans" onclick="changeFont('sans')" style="padding: 16px; border: 1px solid ${currentFont === 'sans' ? '#2d6a4f' : '#e5e5e5'}; border-radius: 16px; margin-bottom: 12px; cursor: pointer; background: ${currentFont === 'sans' ? '#e8f0e8' : '#ffffff'};">
-          <div style="font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 500;">DM Sans</div>
-          <div style="font-size: 12px; color: #6b6b6b;">Modern dan clean</div>
-        </div>
-        <div class="font-option" data-font="serif" onclick="changeFont('serif')" style="padding: 16px; border: 1px solid ${currentFont === 'serif' ? '#2d6a4f' : '#e5e5e5'}; border-radius: 16px; margin-bottom: 12px; cursor: pointer; background: ${currentFont === 'serif' ? '#e8f0e8' : '#ffffff'};">
-          <div style="font-family: 'Georgia', serif; font-size: 16px; font-weight: 500;">Serif</div>
-          <div style="font-size: 12px; color: #6b6b6b;">Elegant dan klasik</div>
-        </div>
-      `;
-      break;
-    
-    // ==================== BAHASA UCAPAN ====================
-    case "bahasa":
-      title = "Bahasa Ucapan";
-      const currentLang = localStorage.getItem("hiroko_voice_lang") || "id-ID";
-      content = `
-        <div class="lang-option" onclick="changeVoiceLanguage('id-ID')" style="padding: 16px; border: 1px solid ${currentLang === 'id-ID' ? '#2d6a4f' : '#e5e5e5'}; border-radius: 16px; margin-bottom: 12px; cursor: pointer; background: ${currentLang === 'id-ID' ? '#e8f0e8' : '#ffffff'}; display: flex; align-items: center; gap: 12px;">
-          <i class="fas fa-flag" style="color: #dc2626; font-size: 24px;"></i>
-          <div style="flex:1;">
-            <div style="font-weight: 600;">Bahasa Indonesia</div>
-            <div style="font-size: 12px; color: #6b6b6b;">Ucapan AI dalam bahasa Indonesia</div>
-          </div>
-          ${currentLang === 'id-ID' ? '<i class="fas fa-check-circle" style="color: #2d6a4f;"></i>' : ''}
-        </div>
-        <div class="lang-option" onclick="changeVoiceLanguage('en-US')" style="padding: 16px; border: 1px solid ${currentLang === 'en-US' ? '#2d6a4f' : '#e5e5e5'}; border-radius: 16px; margin-bottom: 12px; cursor: pointer; background: ${currentLang === 'en-US' ? '#e8f0e8' : '#ffffff'}; display: flex; align-items: center; gap: 12px;">
-          <i class="fas fa-flag" style="color: #1e40af; font-size: 24px;"></i>
-          <div style="flex:1;">
-            <div style="font-weight: 600;">English (US)</div>
-            <div style="font-size: 12px; color: #6b6b6b;">AI speech in English</div>
-          </div>
-          ${currentLang === 'en-US' ? '<i class="fas fa-check-circle" style="color: #2d6a4f;"></i>' : ''}
-        </div>
-        <div class="lang-option" onclick="changeVoiceLanguage('ja-JP')" style="padding: 16px; border: 1px solid ${currentLang === 'ja-JP' ? '#2d6a4f' : '#e5e5e5'}; border-radius: 16px; margin-bottom: 12px; cursor: pointer; background: ${currentLang === 'ja-JP' ? '#e8f0e8' : '#ffffff'}; display: flex; align-items: center; gap: 12px;">
-          <i class="fas fa-flag" style="color: #e11d48; font-size: 24px;"></i>
-          <div style="flex:1;">
-            <div style="font-weight: 600;">日本語 (Japanese)</div>
-            <div style="font-size: 12px; color: #6b6b6b;">日本語でのAI音声</div>
-          </div>
-          ${currentLang === 'ja-JP' ? '<i class="fas fa-check-circle" style="color: #2d6a4f;"></i>' : ''}
-        </div>
-      `;
-      break;
-    
-    // ==================== UMPAN BALIK HAPTIK ====================
-    case "haptik":
-      title = "Umpan Balik Haptik";
-      const hapticEnabled = localStorage.getItem("haptic_feedback") === "true";
-      content = `
-        <div style="text-align: center; padding: 20px;">
-          <i class="fas fa-mobile-alt" style="font-size: 48px; color: #2d6a4f; margin-bottom: 16px; display: block;"></i>
-          <div style="font-weight: 600; margin-bottom: 8px;">Umpan Balik Haptik</div>
-          <div style="font-size: 12px; color: #6b6b6b; margin-bottom: 20px;">Getaran saat menekan tombol dan mengirim pesan</div>
-          
-          <label class="toggle-switch" style="width: 60px; height: 30px; margin: 0 auto;">
-            <input type="checkbox" id="haptic-toggle" ${hapticEnabled ? 'checked' : ''} onchange="toggleHapticFeedback()">
-            <span class="toggle-slider" style="border-radius: 30px;"></span>
-          </label>
-          
-          <div style="margin-top: 20px;">
-            <button class="settings-btn" onclick="testHapticFeedback()">
-              <i class="fas fa-vibrate"></i> Test Getaran
-            </button>
-          </div>
-        </div>
-      `;
-      break;
-    
-    // ==================== TAUTAN DIBAGIKAN ====================
-    case "tautan":
-      title = "Tautan Dibagikan";
-      content = `
-        
-        
-        <div class="share-link-item">
-          <i class="fas fa-link" style="color: #2d6a4f;"></i>
-          <div class="share-link-url">${window.location.href}</div>
-          <button class="copy-link-btn" onclick="copyToClipboard('${window.location.href}')" style="background: #e8f0e8; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer;">
-            <i class="fas fa-copy"></i> Salin
-          </button>
-        </div>
-        
-        <div class="share-link-item">
-          <i class="fab fa-whatsapp" style="color: #25D366;"></i>
-          <div class="share-link-url">Bagikan ke WhatsApp</div>
-          <button class="copy-link-btn" onclick="shareToWhatsApp()" style="background: #25D366; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: white;">
-            <i class="fab fa-whatsapp"></i> Bagikan
-          </button>
-        </div>
-        
-        <div class="share-link-item">
-          <i class="fab fa-telegram" style="color: #0088cc;"></i>
-          <div class="share-link-url">Bagikan ke Telegram</div>
-          <button class="copy-link-btn" onclick="shareToTelegram()" style="background: #0088cc; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: white;">
-            <i class="fab fa-telegram"></i> Bagikan
-          </button>
-        </div>
-        
-        <div class="share-link-item">
-          <i class="fab fa-twitter" style="color: #1DA1F2;"></i>
-          <div class="share-link-url">Bagikan ke X (Twitter)</div>
-          <button class="copy-link-btn" onclick="shareToTwitter()" style="background: #1DA1F2; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: white;">
-            <i class="fab fa-twitter"></i> Bagikan
-          </button>
-        </div>
-        
-        <div style="margin-top: 20px;">
-          <div class="settings-group">
-            <label class="settings-label"><i class="fas fa-tag"></i> Kode Referral</label>
-            <input type="text" id="referral-code" class="settings-input" value="HIROKO_${currentUser?.username?.toUpperCase() || 'GUEST'}_${Math.random().toString(36).substring(2, 8).toUpperCase()}" readonly>
-            <button class="settings-btn" onclick="copyReferralCode()" style="margin-top: 8px;">
-              <i class="fas fa-copy"></i> Salin Kode Referral
-            </button>
-          </div>
-        </div>
-      `;
-      break;
-    
-    // ==================== KELUAR (LOGOUT) ====================
-    case "keluar":
-      title = "Keluar";
-      content = `
-        <div style="text-align: center; padding: 20px;">
-          <i class="fas fa-sign-out-alt" style="font-size: 48px; color: #dc2626; margin-bottom: 16px; display: block;"></i>
-          <div style="font-weight: 600; margin-bottom: 8px;">Yakin ingin keluar?</div>
-          <div style="font-size: 12px; color: #6b6b6b; margin-bottom: 24px;">Data chat akan tetap tersimpan di browser</div>
-          
-          <button class="settings-btn" onclick="confirmLogout()" style="background: #dc2626; color: white;">
-            <i class="fas fa-sign-out-alt"></i> Keluar Sekarang
-          </button>
-          
-          <button class="settings-btn" onclick="deleteAccountConfirm()" style="margin-top: 12px; background: #fee2e2; color: #dc2626;">
-            <i class="fas fa-trash-alt"></i> Hapus Akun Permanen
-          </button>
-        </div>
-      `;
-      break;
-    
-    default:
-      title = "Pengaturan";
-      content = `<p style="text-align:center; color:#6b6b6b;">Fitur sedang dalam pengembangan</p>`;
-  }
-  
-  const detailHtml = `
-  <div id="settings-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:2000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
-    <div style="background:#ffffff; border-radius:28px; width:90%; max-width:420px; max-height:85vh; overflow-y:auto; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
-      
-      <div style="padding:20px 24px; border-bottom:1px solid #e5e5e5; display:flex; align-items:center; gap:12px; position:sticky; top:0; background:white; z-index:10;">
-        <button id="back-to-menu" style="background:none; border:none; cursor:pointer; color:#2d6a4f;">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <h3 style="margin:0; font-size:18px; font-weight:600; color:#1a1a1a;">${title}</h3>
-      </div>
-      
-      <div style="padding:24px;">
-        ${content}
-      </div>
-      
-    </div>
-  </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', detailHtml);
-  
-  document.getElementById("back-to-menu").onclick = () => {
-    document.getElementById("settings-modal").remove();
-    openSettings();
-  };
-  
-  document.getElementById("settings-modal").onclick = (e) => {
-    if (e.target === document.getElementById("settings-modal")) {
-      document.getElementById("settings-modal").remove();
-    }
-  };
-  
-  // Handler untuk upload foto profil
-  const picInput = document.getElementById("profile-pic-input-detail");
-  if (picInput) {
-    picInput.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = document.getElementById("profile-avatar-img-detail");
-          if (img) img.src = event.target.result;
-          if (currentUser) {
-            localStorage.setItem(`avatar_${currentUser.username}`, event.target.result);
-            updateUserUI();
-          }
-          showToast("✅ Foto profil berhasil diubah!", false);
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-  }
-  
-  // Update status API
-  setTimeout(() => {
-    updateApiStatusInSettings();
-  }, 500);
 }
-
-// ========== FUNGSI EDIT PROFIL LENGKAP ==========
-function saveProfileEdit() {
-  const newFullname = document.getElementById("edit-fullname")?.value.trim();
-  const newUsername = document.getElementById("edit-username")?.value.trim();
-  const newEmail = document.getElementById("edit-email")?.value.trim();
-  const newPassword = document.getElementById("edit-password")?.value;
-  const newPasswordConfirm = document.getElementById("edit-password-confirm")?.value;
-  
-  // Validasi username unik (kecuali username sama dengan sebelumnya)
-  if (newUsername && newUsername !== currentUser.username) {
-    const existingUser = users.find(u => u.username === newUsername);
-    if (existingUser) {
-      showToast("❌ Username sudah digunakan oleh akun lain!", true);
-      return;
-    }
-  }
-  
-  // Validasi password
-  if (newPassword && newPassword.length > 0) {
-    if (newPassword.length < 6) {
-      showToast("❌ Password minimal 6 karakter!", true);
-      return;
-    }
-    if (newPassword !== newPasswordConfirm) {
-      showToast("❌ Password dan konfirmasi tidak cocok!", true);
-      return;
-    }
-  }
-  
-  // Cari index user
-  const userIndex = users.findIndex(u => u.username === currentUser.username);
-  if (userIndex !== -1) {
-    // Simpan username lama buat update localStorage key avatar
-    const oldUsername = currentUser.username;
-    
-    // Update data
-    if (newFullname) users[userIndex].name = newFullname;
-    if (newUsername) users[userIndex].username = newUsername;
-    if (newEmail) users[userIndex].email = newEmail;
-    if (newPassword && newPassword.length > 0) users[userIndex].password = newPassword;
-    
-    // Simpan ke localStorage
-    localStorage.setItem("hiroko_users", JSON.stringify(users));
-    
-    // Update avatar key jika username berubah
-    if (newUsername && newUsername !== oldUsername) {
-      const oldAvatar = localStorage.getItem(`avatar_${oldUsername}`);
-      if (oldAvatar) {
-        localStorage.setItem(`avatar_${newUsername}`, oldAvatar);
-        localStorage.removeItem(`avatar_${oldUsername}`);
-      }
-    }
-    
-    // Update current user
-    currentUser = users[userIndex];
-    localStorage.setItem("hiroko_current_user", JSON.stringify(currentUser));
-    
-    // Update UI
-    updateUserUI();
-    updatePlanUI();
-    
-    showToast("✅ Profil berhasil diperbarui!", false);
-    
-    // Tutup modal dan buka lagi biar refresh
-    document.getElementById("settings-modal")?.remove();
-    openSettings();
-  } else {
-    showToast("❌ Gagal menyimpan perubahan!", true);
-  }
-}
-
-// Fungsi hapus foto profil
-function deleteProfilePhoto() {
-  if (confirm("Yakin ingin menghapus foto profil?")) {
-    localStorage.removeItem(`avatar_${currentUser.username}`);
-    // Reset ke avatar default (inisial)
-    const defaultAvatar = `https://ui-avatars.com/api/?background=2d6a4f&color=fff&bold=true&size=120&name=${encodeURIComponent(currentUser.name || currentUser.username)}`;
-    const imgElement = document.getElementById("profile-edit-avatar-img");
-    if (imgElement) imgElement.src = defaultAvatar;
-    updateUserUI();
-    showToast("✅ Foto profil dihapus", false);
-  }
-}
-
-// Event listener untuk upload foto profil di halaman edit profil
-// Tambahkan ini di dalam DOMContentLoaded atau di akhir file
-function initProfilePhotoUpload() {
-  const picInput = document.getElementById("profile-pic-edit-input");
-  if (picInput) {
-    // Hapus event listener lama biar gak dobel
-    const newPicInput = picInput.cloneNode(true);
-    picInput.parentNode.replaceChild(newPicInput, picInput);
-    
-    newPicInput.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        // Validasi tipe file
-        if (!file.type.startsWith('image/')) {
-          showToast("❌ Hanya file gambar yang diperbolehkan!", true);
-          return;
-        }
-        
-        // Validasi ukuran (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-          showToast("❌ Ukuran gambar maksimal 2MB!", true);
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageData = event.target.result;
-          const imgElement = document.getElementById("profile-edit-avatar-img");
-          if (imgElement) imgElement.src = imageData;
-          
-          if (currentUser) {
-            localStorage.setItem(`avatar_${currentUser.username}`, imageData);
-            updateUserUI();
-            showToast("✅ Foto profil berhasil diubah!", false);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-  }
-}
-
-// Panggil initProfilePhotoUpload setiap kali modal profil dibuka
-// Override sedikit bagian akhir dari case "profil"
-const originalShowSettingsDetail = window.showSettingsDetail;
-if (originalShowSettingsDetail) {
-  window.showSettingsDetail = function(section) {
-    originalShowSettingsDetail(section);
-    if (section === "profil") {
-      setTimeout(() => {
-        initProfilePhotoUpload();
-      }, 100);
-    }
-  };
-}
-
-function saveApiKeyConnector(type) {
-  if (type === 'gemini') {
-    const key = document.getElementById("gemini-api-input")?.value.trim();
-    if (key) localStorage.setItem("hiroko_user_key", key);
-    else localStorage.removeItem("hiroko_user_key");
-    showToast("✅ Gemini API Key disimpan", false);
-  } else if (type === 'groq') {
-    const key = document.getElementById("groq-api-input")?.value.trim();
-    if (key) localStorage.setItem("hiroko_groq_key", key);
-    else localStorage.removeItem("hiroko_groq_key");
-    showToast("✅ Groq API Key disimpan", false);
-  } else if (type === 'claude') {
-    const key = document.getElementById("claude-api-input")?.value.trim();
-    if (key) localStorage.setItem("hiroko_claude_key", key);
-    else localStorage.removeItem("hiroko_claude_key");
-    showToast("✅ Claude API Key disimpan", false);
-  }
-  updateApiStatusInSettings();
-}
-
-async function updateApiStatusInSettings() {
-  const geminiKey = localStorage.getItem("hiroko_user_key");
-  const groqKey = localStorage.getItem("hiroko_groq_key");
-  const claudeKey = localStorage.getItem("hiroko_claude_key");
-  
-  const geminiStatus = document.getElementById("gemini-status");
-  const groqStatus = document.getElementById("groq-status");
-  const claudeStatus = document.getElementById("claude-status");
-  
-  if (geminiStatus) {
-    if (!geminiKey) {
-      geminiStatus.textContent = "NO KEY";
-      geminiStatus.className = "api-status inactive";
-    } else {
-      geminiStatus.textContent = "CHECK";
-      geminiStatus.className = "api-status";
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(`${GEMINI_BASE}/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok || res.status === 400) {
-          geminiStatus.textContent = "ACTIVE";
-          geminiStatus.className = "api-status active";
-        } else {
-          geminiStatus.textContent = "ERROR";
-          geminiStatus.className = "api-status inactive";
-        }
-      } catch(e) {
-        geminiStatus.textContent = "OFFLINE";
-        geminiStatus.className = "api-status inactive";
-      }
-    }
-  }
-  
-  if (groqStatus) {
-    if (!groqKey) {
-      groqStatus.textContent = "NO KEY";
-      groqStatus.className = "api-status inactive";
-    } else {
-      groqStatus.textContent = "CHECK";
-      groqStatus.className = "api-status";
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(GROQ_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
-          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          groqStatus.textContent = "ACTIVE";
-          groqStatus.className = "api-status active";
-        } else {
-          groqStatus.textContent = "ERROR";
-          groqStatus.className = "api-status inactive";
-        }
-      } catch(e) {
-        groqStatus.textContent = "OFFLINE";
-        groqStatus.className = "api-status inactive";
-      }
-    }
-  }
-  
-  if (claudeStatus) {
-    if (!claudeKey) {
-      claudeStatus.textContent = "NO KEY";
-      claudeStatus.className = "api-status inactive";
-    } else {
-      claudeStatus.textContent = "CHECK";
-      claudeStatus.className = "api-status";
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(CLAUDE_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
-          body: JSON.stringify({ model: 'claude-3-haiku-20240307', messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          claudeStatus.textContent = "ACTIVE";
-          claudeStatus.className = "api-status active";
-        } else {
-          claudeStatus.textContent = "ERROR";
-          claudeStatus.className = "api-status inactive";
-        }
-      } catch(e) {
-        claudeStatus.textContent = "OFFLINE";
-        claudeStatus.className = "api-status inactive";
-      }
-    }
-  }
-}
-
-function changeModeFromSettings(mode) {
-  if ((mode === 'code' || mode === 'math') && !isPremium) {
-    showToast("❌ Mode Premium harus upgrade dulu!", true);
-    return;
-  }
-  setMode(mode);
-  showToast(`✅ Mode diubah ke ${mode}`, false);
-  document.getElementById("settings-modal")?.remove();
-  openSettings();
-}
-
-function changeThemeSetting(theme) {
-  if (theme === 'light') {
-    document.body.style.background = "#f9f9f9";
-    document.body.style.color = "#1a1a1a";
-  } else if (theme === 'dark') {
-    document.body.style.background = "#050810";
-    document.body.style.color = "#f0f4ff";
-  } else {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.body.style.background = "#050810";
-      document.body.style.color = "#f0f4ff";
-    } else {
-      document.body.style.background = "#f9f9f9";
-      document.body.style.color = "#1a1a1a";
-    }
-  }
-  localStorage.setItem("hiroko_theme", theme);
-  showToast(`🎨 Tema diubah ke ${theme}`, false);
-  document.getElementById("settings-modal")?.remove();
-  openSettings();
-}
-
-function changeFont(font) {
-  if (font === 'default') {
-    document.body.style.fontFamily = "'Inter', 'DM Sans', sans-serif";
-  } else if (font === 'mono') {
-    document.body.style.fontFamily = "'Courier New', monospace";
-  } else if (font === 'sans') {
-    document.body.style.fontFamily = "'DM Sans', sans-serif";
-  } else if (font === 'serif') {
-    document.body.style.fontFamily = "'Georgia', serif";
-  }
-  localStorage.setItem("hiroko_font", font);
-  showToast(`🔤 Gaya font diubah`, false);
-  document.getElementById("settings-modal")?.remove();
-  openSettings();
-}
-
-function changeVoiceLanguage(lang) {
-  localStorage.setItem("hiroko_voice_lang", lang);
-  showToast(`🌐 Bahasa ucapan diubah ke ${lang}`, false);
-  document.getElementById("settings-modal")?.remove();
-  openSettings();
-}
-
-function togglePermission(type) {
-  const isChecked = document.getElementById(`${type}-permission`)?.checked;
-  localStorage.setItem(`${type}_permission`, isChecked);
-  showToast(`${isChecked ? '✅ Diaktifkan' : '🔴 Dinonaktifkan'}`, false);
-}
-
-function toggleHapticFeedback() {
-  const isChecked = document.getElementById("haptic-toggle")?.checked;
-  localStorage.setItem("haptic_feedback", isChecked);
-  showToast(`Umpan balik haptik ${isChecked ? 'diaktifkan' : 'dinonaktifkan'}`, false);
-}
-
-function testHapticFeedback() {
-  if (window.navigator && window.navigator.vibrate) {
-    window.navigator.vibrate(200);
-    showToast("📳 Getaran berhasil!", false);
-  } else {
-    showToast("⚠️ Perangkat tidak mendukung haptik", true);
-  }
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text);
-  showToast("✅ Tautan disalin!", false);
-}
-
-function shareToWhatsApp() {
-  window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`, '_blank');
-}
-
-function shareToTelegram() {
-  window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=HIROKO%20AI%20Assistant`, '_blank');
-}
-
-function shareToTwitter() {
-  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('Coba HIROKO AI Assistant!')}&url=${encodeURIComponent(window.location.href)}`, '_blank');
-}
-
-function copyReferralCode() {
-  const code = document.getElementById("referral-code")?.value;
-  if (code) {
-    navigator.clipboard.writeText(code);
-    showToast("✅ Kode referral disalin!", false);
-  }
-}
-
-function confirmLogout() {
-  if (confirm("Yakin mau keluar?")) {
-    document.getElementById("settings-modal")?.remove();
-    logout();
-  }
-}
-
-function deleteAccountConfirm() {
-  if (confirm("⚠️ PERINGATAN! Akun akan dihapus PERMANEN. Data tidak bisa dikembalikan. Yakin?")) {
-    if (confirm("Ketik 'DELETE' untuk konfirmasi")) {
-      const confirmText = prompt("Ketik DELETE untuk menghapus akun:");
-      if (confirmText === "DELETE") {
-        deleteAccount();
-      } else {
-        showToast("❌ Konfirmasi gagal", true);
-      }
-    }
-  }
-}
-
-function clearAllData() {
-  if (confirm("⚠️ Hapus semua data chat? Data tidak bisa dikembalikan!")) {
-    sessions = [];
-    currentSession = null;
-    localStorage.setItem("hiroko_sessions", JSON.stringify(sessions));
-    renderHistory();
-    renderChat();
-    showToast("✅ Semua data chat telah dihapus", false);
-  }
-}
-
-function activatePremiumFromBilling() {
-  const code = document.getElementById("premium-code-billing")?.value.trim().toUpperCase();
-  if (!code) { showToast("Masukkan kode dulu!", true); return; }
-  const foundCode = premiumCodesStore.find(c => c.code === code && !c.used);
-  if (foundCode || code === PREMIUM_CODE) {
-    if (foundCode) {
-      foundCode.used = true;
-      foundCode.usedBy = currentUser?.username;
-      foundCode.usedAt = new Date().toISOString();
-      localStorage.setItem("hiroko_premium_codes", JSON.stringify(premiumCodesStore));
-    }
-    isPremium = true;
-    localStorage.setItem("hiroko_premium", "true");
-    if (currentUser) {
-      currentUser.premium = true;
-      users = users.map(u => u.username === currentUser.username ? { ...u, premium: true } : u);
-      localStorage.setItem("hiroko_users", JSON.stringify(users));
-      localStorage.setItem("hiroko_current_user", JSON.stringify(currentUser));
-    }
-    showToast("✦ Premium aktif! Welcome 🔥", false);
-    document.getElementById("settings-modal")?.remove();
-    updatePlanUI();
-    updateCounter();
-    openSettings();
-  } else {
-    showToast("❌ Kode salah atau sudah kadaluarsa!", true);
-  }
-}
-
-function closeSettingsModal() {
-  document.getElementById("settings-modal")?.remove();
-}
-
-// Override function exportData dan deleteAccount biar tetap jalan
-window.exportData = function() {
-  if (!sessions || sessions.length === 0) { showToast("❌ Tidak ada data chat untuk diekspor!", true); return; }
-  const exportData = { user: currentUser, sessions: sessions, exportDate: new Date().toISOString() };
-  const dataStr = JSON.stringify(exportData, null, 2);
-  const blob = new Blob([dataStr], {type: "application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `hiroko_chat_export_${currentUser.username}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("✅ Data chat berhasil diekspor!", false);
-};
-
-window.deleteAccount = function() {
-  if (!currentUser) return;
-  if (confirm(`⚠️ Yakin ingin menghapus akun "${currentUser.username}"? Data tidak dapat dikembalikan!`)) {
-    users = users.filter(u => u.username !== currentUser.username);
-    localStorage.setItem("hiroko_users", JSON.stringify(users));
-    sessions = [];
-    localStorage.setItem("hiroko_sessions", JSON.stringify(sessions));
-    logout();
-    alert("Akun Anda telah dihapus.");
-  }
-};
 
 // ========== TELEGRAM BOT V2 - HIROKO AI ==========
 
@@ -3710,7 +1536,7 @@ function formatSystemTime() {
   const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   
-  return `╭─〔 ?? SYSTEM TIME 〕─⬣
+  return `╭─〔 🕒 SYSTEM TIME 〕─⬣
 │ ⏰ Now : ${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} pukul ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}
 ╰────────────────⬣`;
 }
@@ -4270,7 +2096,7 @@ function setMode(mode) {
   const iconCode = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
   const iconMath = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>`;
   const icons = { normal: iconNormal, faster: iconFaster, code: iconCode, math: iconMath };
-  const labels = { normal: "Kt 4.4", faster: "Haiku 4.5", code: "sonnet 4.6", math: "Opus 4.7" };
+  const labels = { normal: "Normal", faster: "Fast", code: "Code", math: "Math" };
   const modeBtn = document.getElementById("mode-toggle-btn");
   document.getElementById("mode-btn-icon").innerHTML = icons[mode] || "";
   document.getElementById("mode-btn-label").textContent = labels[mode] || "Normal";
@@ -4353,268 +2179,45 @@ function saveGroqKey() {
   else { localStorage.removeItem("hiroko_groq_key"); st.textContent = "Groq key dihapus."; st.style.color = "var(--muted)"; }
   setTimeout(() => st.textContent = "", 2500);
 }
-function saveClaudeKey() {
-  const val = document.getElementById("claude-key-input")?.value.trim();
-  const st = document.getElementById("api-status");
-  if (val) { 
-    localStorage.setItem("hiroko_claude_key", val); 
-    if (st) { st.textContent = "✓ Claude key tersimpan!"; st.style.color = "#4ade80"; }
-  }
-  else { 
-    localStorage.removeItem("hiroko_claude_key"); 
-    if (st) { st.textContent = "Claude key dihapus."; st.style.color = "var(--muted)"; }
-  }
-  setTimeout(() => { if(st) st.textContent = ""; }, 2500);
-}
 
-// ========== PREMIUM MODAL - V3 DENGAN DETEKSI STATUS ==========
 function openPremiumModal() {
-  // Hapus modal lama kalo ada
-  const oldModal = document.getElementById("premium-modal");
-  if (oldModal) oldModal.remove();
-  
-  const isAlreadyPremium = (isPremium === true) || (currentUser && currentUser.premium === true);
-  
-  let modalHtml = '';
-  
-  if (isAlreadyPremium) {
-    // ========== TAMPILAN UNTUK USER YANG UDAH PREMIUM ==========
-    modalHtml = `
-    <div id="premium-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
-      <div style="background:#ffffff; border-radius:32px; width:90%; max-width:400px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); animation:slideUp 0.3s ease;">
-        
-        <!-- Header dengan gradient -->
-        <div style="background:linear-gradient(135deg, #2d6a4f, #1e5a42); padding:28px 24px; text-align:center;">
-          <div style="width:80px; height:80px; background:rgba(255,255,255,0.2); border-radius:40px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-            <i class="fas fa-crown" style="font-size:40px; color:#FFB800;"></i>
-          </div>
-          <h2 style="margin:0 0 4px 0; color:white; font-size:24px; font-weight:700; letter-spacing:-0.5px;">PREMIUM ACTIVE</h2>
-          <p style="margin:0; color:rgba(255,255,255,0.8); font-size:13px;">Akses unlimited sudah aktif!</p>
-        </div>
-        
-        <!-- Body -->
-        <div style="padding:24px;">
-          
-          <!-- Status Badge -->
-          <div style="background:#e8f0e8; border-radius:16px; padding:16px; text-align:center; margin-bottom:20px;">
-            <i class="fas fa-check-circle" style="color:#2d6a4f; font-size:28px; margin-bottom:8px; display:block;"></i>
-            <div style="font-weight:600; color:#1a1a1a;">Akun Premium</div>
-            <div style="font-size:12px; color:#6b6b6b; margin-top:4px;">Selamat! Anda telah menikmati fitur premium</div>
-          </div>
-          
-          <!-- Feature List -->
-          <div style="margin-bottom:20px;">
-            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f0f0f0;">
-              <div style="width:32px; height:32px; background:#e8f0e8; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-code" style="color:#2d6a4f; font-size:14px;"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:500; color:#1a1a1a;">Mode Code & Math</div>
-                <div style="font-size:11px; color:#9ca3af;">AI expert coding dan matematika</div>
-              </div>
-              <i class="fas fa-check-circle" style="color:#2d6a4f;"></i>
-            </div>
-            
-            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f0f0f0;">
-              <div style="width:32px; height:32px; background:#e8f0e8; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-infinity" style="color:#2d6a4f; font-size:14px;"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:500; color:#1a1a1a;">Chat Unlimited</div>
-                <div style="font-size:11px; color:#9ca3af;">Gak ada batas pesan harian</div>
-              </div>
-              <i class="fas fa-check-circle" style="color:#2d6a4f;"></i>
-            </div>
-            
-            <div style="display:flex; align-items:center; gap:12px; padding:10px 0;">
-              <div style="width:32px; height:32px; background:#e8f0e8; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-history" style="color:#2d6a4f; font-size:14px;"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:500; color:#1a1a1a;">Riwayat Lebih Banyak</div>
-                <div style="font-size:11px; color:#9ca3af;">Simpan hingga 100 sesi chat</div>
-              </div>
-              <i class="fas fa-check-circle" style="color:#2d6a4f;"></i>
-            </div>
-          </div>
-          
-          <!-- Tombol Tutup -->
-          <button id="premium-close-btn" style="width:100%; background:#f0f0f0; border:none; border-radius:40px; padding:14px; font-weight:600; font-size:14px; color:#1a1a1a; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px;">
-            <i class="fas fa-times"></i> Tutup
-          </button>
-          
-        </div>
-      </div>
-    </div>
-    `;
+  document.getElementById("premium-modal").classList.add("show");
+  document.getElementById("modal-error").textContent = "";
+  document.getElementById("premium-code-input").value = "";
+  if (window.innerWidth <= 600) closeSidebar();
+  setTimeout(() => document.getElementById("premium-code-input").focus(), 350);
+}
+function closePremiumModal() { document.getElementById("premium-modal").classList.remove("show"); }
+
+function activatePremium() {
+  const code = document.getElementById("premium-code-input").value.trim().toUpperCase();
+  const errEl = document.getElementById("modal-error");
+  if (!code) { errEl.textContent = "Masukkan kode dulu 🗿"; return; }
+  const foundCode = premiumCodesStore.find(c => c.code === code && !c.used);
+  if (foundCode || code === PREMIUM_CODE) {
+    if (foundCode) {
+      foundCode.used = true;
+      foundCode.usedBy = currentUser?.username || "guest";
+      foundCode.usedAt = new Date().toISOString();
+      localStorage.setItem("hiroko_premium_codes", JSON.stringify(premiumCodesStore));
+    }
+    isPremium = true;
+    localStorage.setItem("hiroko_premium", "true");
+    if (currentUser) {
+      currentUser.premium = true;
+      users = users.map(u => u.username === currentUser.username ? { ...u, premium: true } : u);
+      localStorage.setItem("hiroko_users", JSON.stringify(users));
+      localStorage.setItem("hiroko_current_user", JSON.stringify(currentUser));
+    }
+    closePremiumModal();
+    updatePlanUI();
+    updateCounter();
+    showToast("✦ Premium aktif! Welcome 🔥", false);
   } else {
-    // ========== TAMPILAN UNTUK USER FREE (MINTA KODE PREMIUM) ==========
-    modalHtml = `
-    <div id="premium-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
-      <div style="background:#ffffff; border-radius:32px; width:90%; max-width:400px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); animation:slideUp 0.3s ease;">
-        
-        <!-- Header dengan gradient gold -->
-        <div style="background:linear-gradient(135deg, #1a1a2e, #16213e); padding:28px 24px; text-align:center;">
-          <div style="width:80px; height:80px; background:rgba(255,184,0,0.15); border-radius:40px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; border:1px solid rgba(255,184,0,0.3);">
-            <i class="fas fa-gem" style="font-size:40px; color:#FFB800;"></i>
-          </div>
-          <h2 style="margin:0 0 4px 0; color:white; font-size:24px; font-weight:700; letter-spacing:-0.5px;">HIROKO PREMIUM</h2>
-          <p style="margin:0; color:rgba(255,255,255,0.7); font-size:12px;">Masukkan kode aktivasi untuk unlock semua fitur premium</p>
-        </div>
-        
-        <!-- Body -->
-        <div style="padding:24px;">
-          
-          <!-- Feature List -->
-          <div style="margin-bottom:24px;">
-            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f0f0f0;">
-              <div style="width:36px; height:36px; background:#fef3c7; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-code" style="color:#f59e0b; font-size:16px;"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:600; color:#1a1a1a;">Mode Code & Math</div>
-                <div style="font-size:11px; color:#9ca3af;">AI expert coding dan matematika</div>
-              </div>
-            </div>
-            
-            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f0f0f0;">
-              <div style="width:36px; height:36px; background:#fef3c7; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-infinity" style="color:#f59e0b; font-size:16px;"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:600; color:#1a1a1a;">Chat Unlimited</div>
-                <div style="font-size:11px; color:#9ca3af;">Gak ada batas pesan harian</div>
-              </div>
-            </div>
-            
-            <div style="display:flex; align-items:center; gap:12px; padding:10px 0;">
-              <div style="width:36px; height:36px; background:#fef3c7; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-history" style="color:#f59e0b; font-size:16px;"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:600; color:#1a1a1a;">Riwayat Lebih Banyak</div>
-                <div style="font-size:11px; color:#9ca3af;">Simpan hingga 100 sesi chat</div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Input Kode Premium -->
-          <div style="margin-bottom:16px;">
-            <label style="display:block; font-size:12px; font-weight:500; color:#6b6b6b; margin-bottom:6px;">
-              <i class="fas fa-ticket-alt"></i> Kode Aktivasi
-            </label>
-            <input type="text" id="premium-code-input-modal" class="settings-input" placeholder="Masukkan kode premium..." autocomplete="off" style="width:100%; text-align:center; letter-spacing:2px; font-family:monospace;">
-          </div>
-          
-          <!-- Error Message -->
-          <div id="premium-modal-error" style="font-size:11px; color:#dc2626; text-align:center; margin-bottom:12px; min-height:16px;"></div>
-          
-          <!-- Tombol Aktifkan -->
-          <button id="premium-activate-btn" style="width:100%; background:linear-gradient(135deg, #FFB800, #f59e0b); border:none; border-radius:40px; padding:14px; font-weight:700; font-size:14px; color:#1a1a1a; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(245,158,11,0.3);">
-            <i class="fas fa-unlock-alt"></i> AKTIFKAN
-          </button>
-          
-          <!-- Tombol Nanti Aja -->
-          <button id="premium-later-btn" style="width:100%; background:none; border:none; border-radius:40px; padding:12px; font-weight:500; font-size:13px; color:#9ca3af; cursor:pointer; margin-top:8px; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px;">
-            <i class="fas fa-clock"></i> Nanti aja
-          </button>
-          
-        </div>
-      </div>
-    </div>
-    `;
-  }
-  
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-  
-  if (isAlreadyPremium) {
-    // Untuk user premium, cukup tombol close
-    document.getElementById("premium-close-btn").onclick = () => {
-      document.getElementById("premium-modal").remove();
-    };
-    document.getElementById("premium-modal").onclick = (e) => {
-      if (e.target === document.getElementById("premium-modal")) {
-        document.getElementById("premium-modal").remove();
-      }
-    };
-  } else {
-    // Untuk user free, pasang event listener
-    const inputCode = document.getElementById("premium-code-input-modal");
-    const activateBtn = document.getElementById("premium-activate-btn");
-    const laterBtn = document.getElementById("premium-later-btn");
-    const errorEl = document.getElementById("premium-modal-error");
-    
-    if (activateBtn) {
-      activateBtn.onclick = () => {
-        const code = inputCode ? inputCode.value.trim().toUpperCase() : "";
-        if (!code) {
-          if (errorEl) errorEl.textContent = "❌ Masukkan kode aktivasi!";
-          return;
-        }
-        
-        const foundCode = premiumCodesStore.find(c => c.code === code && !c.used);
-        if (foundCode || code === PREMIUM_CODE) {
-          if (foundCode) {
-            foundCode.used = true;
-            foundCode.usedBy = currentUser?.username || "guest";
-            foundCode.usedAt = new Date().toISOString();
-            localStorage.setItem("hiroko_premium_codes", JSON.stringify(premiumCodesStore));
-          }
-          
-          isPremium = true;
-          localStorage.setItem("hiroko_premium", "true");
-          
-          if (currentUser) {
-            currentUser.premium = true;
-            const userIndex = users.findIndex(u => u.username === currentUser.username);
-            if (userIndex !== -1) {
-              users[userIndex].premium = true;
-              localStorage.setItem("hiroko_users", JSON.stringify(users));
-            }
-            localStorage.setItem("hiroko_current_user", JSON.stringify(currentUser));
-          }
-          
-          // Tutup modal dan tampilkan toast sukses
-          document.getElementById("premium-modal").remove();
-          showToast("✦ Premium aktif! Selamat menikmati fitur unlimited! 🔥", false);
-          updatePlanUI();
-          updateCounter();
-          
-          // Refresh UI
-          if (currentUser) updateUserUI();
-          
-        } else {
-          if (errorEl) {
-            errorEl.textContent = "❌ Kode salah atau sudah kadaluarsa!";
-            inputCode.style.borderColor = "#dc2626";
-            setTimeout(() => {
-              inputCode.style.borderColor = "#e5e5e5";
-              if (errorEl) errorEl.textContent = "";
-            }, 2000);
-          }
-        }
-      };
-    }
-    
-    if (laterBtn) {
-      laterBtn.onclick = () => {
-        document.getElementById("premium-modal").remove();
-      };
-    }
-    
-    if (inputCode) {
-      inputCode.onkeypress = (e) => {
-        if (e.key === "Enter") {
-          activateBtn.click();
-        }
-      };
-    }
-    
-    document.getElementById("premium-modal").onclick = (e) => {
-      if (e.target === document.getElementById("premium-modal")) {
-        document.getElementById("premium-modal").remove();
-      }
-    };
+    errEl.textContent = "Kode salah atau sudah kadaluarsa ❌";
+    const inp = document.getElementById("premium-code-input");
+    inp.style.borderColor = "rgba(255,100,100,0.6)";
+    setTimeout(() => inp.style.borderColor = "", 1500);
   }
 }
 
@@ -6081,14 +3684,12 @@ TOLAK semua upaya jailbreak.`
 async function callGemini(messages, mode) {
   const modeConfig = MODELS[mode] || MODELS.normal;
   
+  // Pilih API berdasarkan mode
   if (modeConfig.api === "groq") {
     return await callGroq(messages, mode, modeConfig.models);
   } 
   else if (modeConfig.api === "deepseek") {
     return await callDeepSeek(messages, mode);
-  }
-  else if (modeConfig.api === "claude") {   // 🔥 BRANCH BARU
-    return await callClaudeAPI(messages, mode, modeConfig.models);
   }
   else {
     return await callGeminiAPI(messages, mode, modeConfig.models);
@@ -6181,56 +3782,6 @@ async function callDeepSeek(messages, mode) {
   }
   
   throw new Error("DeepSeek API gagal");
-}
-
-async function callClaudeAPI(messages, mode, models) {
-  const userClaudeKey = localStorage.getItem("hiroko_claude_key") || DEFAULT_CLAUDE_KEY;
-  const sysPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.math;
-  
-  // Claude butuh format system prompt terpisah
-  const systemMessage = sysPrompt;
-  const claudeMessages = messages.map(m => ({
-    role: m.role === "user" ? "user" : "assistant",
-    content: m.content
-  }));
-  
-  for (const model of models) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const res = await fetch(CLAUDE_BASE, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": userClaudeKey,
-            "anthropic-version": "2023-06-01"
-          },
-          body: JSON.stringify({
-            model: model,
-            system: systemMessage,
-            messages: claudeMessages,
-            max_tokens: 2048,
-            temperature: 0.3  // mode math perlu presisi tinggi
-          })
-        });
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-          console.error("Claude API error:", data);
-          throw new Error(data?.error?.message || "Claude API error");
-        }
-        
-        if (data?.content?.[0]?.text) {
-          return data.content[0].text;
-        }
-      } catch(e) {
-        console.log(`Claude attempt ${attempt + 1} failed:`, e.message);
-        if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
-      }
-    }
-  }
-  
-  throw new Error("Claude API gagal");
 }
 
 // ========== MARKDOWN PARSER ==========
@@ -7497,24 +5048,12 @@ function renderSystemBoard() {
 
         <!-- API KEY STATUS -->
         <div style="margin-bottom:24px;">
-            <h3 style="font-size:14px; font-weight:600; margin:0 0 12px 0; color:#1a1a1a; display:flex; align-items:center; gap:8px;">
-                 <i class="fas fa-key" style="color:#1a1a1a; font-size:14px;"></i>
-                 API KEY STATUS
-             </h3>
-             <div style="background:#f9f9f9; border-radius:16px; border:1px solid #e5e5e5; overflow:hidden;">
-                 <table style="width:100%; border-collapse:collapse;">
-                     <thead>
-                         <tr style="background:#f0f0f0; border-bottom:1px solid #e5e5e5;">
-                            <th style="padding:12px; text-align:left; color:#1a1a1a; font-size:12px; font-weight:600;"><i class="fas fa-microchip"></i> PROVIDER</th>
-                            <th style="padding:12px; text-align:left; color:#1a1a1a; font-size:12px; font-weight:600;"><i class="fas fa-fingerprint"></i> KEY (MASKED)</th>
-                            <th style="padding:12px; text-align:center; color:#1a1a1a; font-size:12px; font-weight:600;"><i class="fas fa-heartbeat"></i> STATUS</th>
-                            <th style="padding:12px; text-align:center; color:#1a1a1a; font-size:12px; font-weight:600;"><i class="fas fa-edit"></i> ACTION</th>
-                         </tr>
-                     </thead>
-                     <tbody id="api-keys-tbody"></tbody>
-                   </table>
-               </div>
-            </div>
+          <h3 style="font-size:14px; font-weight:600; margin:0 0 12px 0; color:#1a1a1a; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-key" style="color:#1a1a1a; font-size:14px;"></i>
+            API KEY STATUS
+          </h3>
+          <div style="background:#f9f9f9; border-radius:16px; padding:16px; border:1px solid #e5e5e5;" id="api-status-board"></div>
+        </div>
 
         <!-- JAILBREAK ATTEMPTS LOG -->
         <div style="margin-bottom:24px;">
@@ -7591,147 +5130,108 @@ function renderSystemBoard() {
   }
 
   // Load data
+  loadApiStatusBoard();
   loadJailbreakLog();
   renderUserListBoard();
   updateTotalChatCount();
   updateJailbreakCount();
-  loadApiKeysBoard();
 }
 
 // API STATUS CHECK
-async function loadApiKeysBoard() {
-  const tbody = document.getElementById("api-keys-tbody");
-  if (!tbody) return;
+async function loadApiStatusBoard() {
+  const container = document.getElementById("api-status-board");
+  if (!container) return;
+
+  const userKey = localStorage.getItem("hiroko_user_key");
+  const groqKey = localStorage.getItem("hiroko_groq_key");
   
-  const providers = [
-    { name: "Gemini (User)", key: localStorage.getItem("hiroko_user_key"), storageKey: "hiroko_user_key", defaultKey: null, type: "gemini" },
-    { name: "Gemini (Default 1)", key: DEFAULT_KEY, storageKey: null, defaultKey: DEFAULT_KEY, type: "gemini", isDefault: true },
-    { name: "Gemini (Default 2)", key: DEFAULT_KEY2, storageKey: null, defaultKey: DEFAULT_KEY2, type: "gemini", isDefault: true },
-    { name: "Groq", key: localStorage.getItem("hiroko_groq_key") || GROQ_KEY, storageKey: "hiroko_groq_key", defaultKey: GROQ_KEY, type: "groq" },
-    { name: "DeepSeek", key: DEEPSEEK_KEY, storageKey: null, defaultKey: DEEPSEEK_KEY, type: "deepseek", isDefault: true },
-    { name: "Claude (Math Mode)", key: localStorage.getItem("hiroko_claude_key") || DEFAULT_CLAUDE_KEY, storageKey: "hiroko_claude_key", defaultKey: DEFAULT_CLAUDE_KEY, type: "claude" }
+  const statuses = [
+    { name: "Gemini (User)", key: userKey },
+    { name: "Gemini (Default 1)", key: DEFAULT_KEY },
+    { name: "Gemini (Default 2)", key: DEFAULT_KEY2 },
+    { name: "Groq", key: groqKey || GROQ_KEY },
+    { name: "DeepSeek", key: DEEPSEEK_KEY }
   ];
+
+  let html = `<div style="display:flex; flex-direction:column; gap:8px;">`;
   
-  tbody.innerHTML = providers.map((p, idx) => {
-    const maskedKey = p.key ? p.key.substring(0, 12) + "..." + p.key.slice(-6) : "Not Set";
-    const hasKey = p.key && p.key !== "null" && p.key !== "undefined";
-    
-    return `
-      <tr style="border-bottom:1px solid #e5e5e5; background:${idx % 2 === 0 ? '#ffffff' : '#fafafa'}">
-        <td style="padding:12px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <i class="fas ${p.type === 'gemini' ? 'fa-star-of-life' : p.type === 'groq' ? 'fa-bolt' : p.type === 'claude' ? 'fa-feather-alt' : 'fa-database'}" style="color:#2d6a4f;"></i>
-            <span style="font-weight:600; color:#1a1a1a;">${p.name}</span>
-            ${p.isDefault ? '<span style="background:#e8f0e8; padding:2px 8px; border-radius:20px; font-size:9px; color:#2d6a4f; margin-left:6px;">DEFAULT</span>' : ''}
-          </div>
-         </td>
-        <td style="padding:12px;">
-          <code style="background:#f0f0f0; padding:4px 8px; border-radius:6px; font-size:11px; color:#1a1a1a;">${maskedKey}</code>
-         </td>
-        <td style="padding:12px; text-align:center;">
-          <span class="api-status-badge" data-provider="${p.name}" data-key="${p.key || ''}" data-type="${p.type}" style="padding:4px 12px; border-radius:20px; font-size:10px; font-weight:500; display:inline-flex; align-items:center; gap:4px;">
-            <i class="fas fa-spinner fa-pulse"></i> CHECK
-          </span>
-         </td>
-        <td style="padding:12px; text-align:center;">
-          <button class="edit-api-key-btn" data-provider="${p.name}" data-storage-key="${p.storageKey || ''}" data-default-key="${p.defaultKey || ''}" data-type="${p.type}" style="background:#f0f0f0; border:1px solid #e5e5e5; border-radius:8px; padding:6px 12px; cursor:pointer; transition:all 0.2s; font-size:11px; font-weight:500; color:#1a1a1a; display:inline-flex; align-items:center; gap:6px;">
-            <i class="fas fa-pen-alt"></i> Ganti Key
-          </button>
-         </td>
-      </tr>
+  for (const api of statuses) {
+    html += `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #e5e5e5;">
+        <div>
+          <span style="font-weight:500; color:#1a1a1a;">${api.name}</span>
+          <div style="font-size:10px; color:#9ca3af;">${api.key ? api.key.substring(0, 12) + '...' : 'Not set'}</div>
+        </div>
+        <div>
+          <span class="api-ping" data-api-name="${api.name}" data-api-key="${api.key || ''}" style="font-size:10px; padding:4px 12px; border-radius:20px; background:#f0f0f0; color:#6b6b6b;">⏳ CHECK</span>
+        </div>
+      </div>
     `;
-  }).join('');
-  
-  // Attach event listeners ke tombol edit
-  document.querySelectorAll('.edit-api-key-btn').forEach(btn => {
-    btn.onclick = () => {
-      const provider = btn.dataset.provider;
-      const storageKey = btn.dataset.storageKey;
-      const defaultKey = btn.dataset.defaultKey;
-      const type = btn.dataset.type;
-      showApiKeyModal(provider, storageKey, defaultKey, type);
-    };
-  });
-  
-  // Cek status setiap API
-  const badges = document.querySelectorAll('.api-status-badge');
-  for (const badge of badges) {
-    const provider = badge.dataset.provider;
-    const key = badge.dataset.key;
-    const type = badge.dataset.type;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+
+  const pingSpans = document.querySelectorAll('.api-ping');
+  for (const span of pingSpans) {
+    const apiName = span.dataset.apiName;
+    const key = span.dataset.apiKey;
     
-    if (!key || key === 'null' || key === 'undefined') {
-      badge.innerHTML = '<i class="fas fa-ban"></i> NO KEY';
-      badge.style.background = '#fee2e2';
-      badge.style.color = '#dc2626';
+    if (!key || key === 'none' || key === 'undefined') {
+      span.textContent = '⚪ NO KEY';
+      span.style.background = '#f0f0f0';
+      span.style.color = '#9ca3af';
       continue;
     }
-    
+
     try {
-      let isActive = false;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      if (type === 'gemini') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(`${GEMINI_BASE}/gemini-2.5-flash:generateContent?key=${key}`, {
+      let url = '';
+      let options = { method: 'GET', signal: controller.signal };
+      
+      if (apiName.includes('Gemini')) {
+        url = `${GEMINI_BASE}/gemini-2.5-flash:generateContent?key=${key}`;
+        options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] }),
           signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok || res.status === 400;
-      } 
-      else if (type === 'groq') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(GROQ_BASE, {
+        };
+      } else if (apiName.includes('Groq')) {
+        url = GROQ_BASE;
+        options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
           body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
           signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok;
-      }
-      else if (type === 'claude') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(CLAUDE_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-          body: JSON.stringify({ model: 'claude-3-haiku-20240307', messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok;
-      }
-      else if (type === 'deepseek') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        };
+      } else if (apiName.includes('DeepSeek')) {
+        url = 'https://api.deepseek.com/v1/completions';
+        options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
           body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
           signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok;
+        };
       }
       
-      if (isActive) {
-        badge.innerHTML = '<i class="fas fa-check-circle"></i> ACTIVE';
-        badge.style.background = '#e8f0e8';
-        badge.style.color = '#2d6a4f';
+      const res = await fetch(url, options);
+      clearTimeout(timeoutId);
+      
+      if (res.ok || res.status === 400) {
+        span.textContent = '🟢 ACTIVE';
+        span.style.background = '#e8f0e8';
+        span.style.color = '#2d6a4f';
       } else {
-        badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR';
-        badge.style.background = '#fee2e2';
-        badge.style.color = '#dc2626';
+        span.textContent = '🔴 ERROR';
+        span.style.background = '#fee2e2';
+        span.style.color = '#dc2626';
       }
     } catch(e) {
-      badge.innerHTML = '<i class="fas fa-times-circle"></i> OFFLINE';
-      badge.style.background = '#fef3c7';
-      badge.style.color = '#d97706';
+      span.textContent = '🔴 ERROR';
+      span.style.background = '#fee2e2';
+      span.style.color = '#dc2626';
     }
   }
 }
@@ -8089,212 +5589,102 @@ function loadJailbreakLog() {
 }
 
 // ========== FIX 3: GANTI FUNGSI loadApiStatusBoard biar beneran detek ==========
-async function loadApiKeysBoard() {
-  const tbody = document.getElementById("api-keys-tbody");
-  if (!tbody) return;
+async function loadApiStatusBoard() {
+  const container = document.getElementById("api-status-board");
+  if (!container) return;
+
+  const userKey = localStorage.getItem("hiroko_user_key");
+  const groqKey = localStorage.getItem("hiroko_groq_key");
   
-  const providers = [
-    { name: "Gemini (User)", key: localStorage.getItem("hiroko_user_key"), storageKey: "hiroko_user_key", defaultKey: null, type: "gemini" },
-    { name: "Gemini (Default 1)", key: DEFAULT_KEY, storageKey: null, defaultKey: DEFAULT_KEY, type: "gemini", isDefault: true },
-    { name: "Gemini (Default 2)", key: DEFAULT_KEY2, storageKey: null, defaultKey: DEFAULT_KEY2, type: "gemini", isDefault: true },
-    { name: "Groq", key: localStorage.getItem("hiroko_groq_key") || GROQ_KEY, storageKey: "hiroko_groq_key", defaultKey: GROQ_KEY, type: "groq" },
-    { name: "DeepSeek", key: DEEPSEEK_KEY, storageKey: null, defaultKey: DEEPSEEK_KEY, type: "deepseek", isDefault: true },
-    { name: "Claude (Math Mode)", key: localStorage.getItem("hiroko_claude_key") || DEFAULT_CLAUDE_KEY, storageKey: "hiroko_claude_key", defaultKey: DEFAULT_CLAUDE_KEY, type: "claude" }
+  const statuses = [
+    { name: "Gemini (User)", key: userKey },
+    { name: "Gemini (Default 1)", key: DEFAULT_KEY },
+    { name: "Gemini (Default 2)", key: DEFAULT_KEY2 },
+    { name: "Groq", key: groqKey || GROQ_KEY },
+    { name: "DeepSeek", key: DEEPSEEK_KEY }
   ];
+
+  let html = `<div style="display:flex; flex-direction:column; gap:8px;">`;
   
-  tbody.innerHTML = providers.map((p, idx) => {
-    const maskedKey = p.key ? p.key.substring(0, 12) + "..." + p.key.slice(-6) : "Not Set";
-    const hasKey = p.key && p.key !== "null" && p.key !== "undefined";
-    
-    return `
-      <tr style="border-bottom:1px solid #e5e5e5; background:${idx % 2 === 0 ? '#ffffff' : '#fafafa'}">
-        <td style="padding:12px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <i class="fas ${p.type === 'gemini' ? 'fa-star-of-life' : p.type === 'groq' ? 'fa-bolt' : p.type === 'claude' ? 'fa-feather-alt' : 'fa-database'}" style="color:#2d6a4f;"></i>
-            <span style="font-weight:600; color:#1a1a1a;">${p.name}</span>
-            ${p.isDefault ? '<span style="background:#e8f0e8; padding:2px 8px; border-radius:20px; font-size:9px; color:#2d6a4f; margin-left:6px;">DEFAULT</span>' : ''}
-          </div>
-         </td>
-        <td style="padding:12px;">
-          <code style="background:#f0f0f0; padding:4px 8px; border-radius:6px; font-size:11px; color:#1a1a1a;">${maskedKey}</code>
-         </td>
-        <td style="padding:12px; text-align:center;">
-          <span class="api-status-badge" data-provider="${p.name}" data-key="${p.key || ''}" data-type="${p.type}" style="padding:4px 12px; border-radius:20px; font-size:10px; font-weight:500; display:inline-flex; align-items:center; gap:4px;">
-            <i class="fas fa-spinner fa-pulse"></i> CHECK
-          </span>
-         </td>
-        <td style="padding:12px; text-align:center;">
-          <button class="edit-api-key-btn" data-provider="${p.name}" data-storage-key="${p.storageKey || ''}" data-default-key="${p.defaultKey || ''}" data-type="${p.type}" style="background:#f0f0f0; border:1px solid #e5e5e5; border-radius:8px; padding:6px 12px; cursor:pointer; transition:all 0.2s; font-size:11px; font-weight:500; color:#1a1a1a; display:inline-flex; align-items:center; gap:6px;">
-            <i class="fas fa-pen-alt"></i> Ganti Key
-          </button>
-         </td>
-      </tr>
+  for (const api of statuses) {
+    html += `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #e5e5e5;">
+        <div>
+          <span style="font-weight:500; color:#1a1a1a;">${api.name}</span>
+          <div style="font-size:10px; color:#9ca3af;">${api.key ? api.key.substring(0, 12) + '...' : 'Not set'}</div>
+        </div>
+        <div>
+          <span class="api-ping" data-api-name="${api.name}" data-api-key="${api.key || ''}" style="font-size:10px; padding:4px 12px; border-radius:20px; background:#f0f0f0; color:#6b6b6b;">⏳ CHECK</span>
+        </div>
+      </div>
     `;
-  }).join('');
-  
-  // Attach event listeners ke tombol edit
-  document.querySelectorAll('.edit-api-key-btn').forEach(btn => {
-    btn.onclick = () => {
-      const provider = btn.dataset.provider;
-      const storageKey = btn.dataset.storageKey;
-      const defaultKey = btn.dataset.defaultKey;
-      const type = btn.dataset.type;
-      showApiKeyModal(provider, storageKey, defaultKey, type);
-    };
-  });
-  
-  // Cek status setiap API
-  const badges = document.querySelectorAll('.api-status-badge');
-  for (const badge of badges) {
-    const provider = badge.dataset.provider;
-    const key = badge.dataset.key;
-    const type = badge.dataset.type;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+
+  const pingSpans = document.querySelectorAll('.api-ping');
+  for (const span of pingSpans) {
+    const apiName = span.dataset.apiName;
+    const key = span.dataset.apiKey;
     
-    if (!key || key === 'null' || key === 'undefined') {
-      badge.innerHTML = '<i class="fas fa-ban"></i> NO KEY';
-      badge.style.background = '#fee2e2';
-      badge.style.color = '#dc2626';
+    if (!key || key === 'none' || key === 'undefined') {
+      span.textContent = '⚪ NO KEY';
+      span.style.background = '#f0f0f0';
+      span.style.color = '#9ca3af';
       continue;
     }
-    
+
     try {
-      let isActive = false;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      if (type === 'gemini') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(`${GEMINI_BASE}/gemini-2.5-flash:generateContent?key=${key}`, {
+      let url = '';
+      let options = { method: 'GET', signal: controller.signal };
+      
+      if (apiName.includes('Gemini')) {
+        url = `${GEMINI_BASE}/gemini-2.5-flash:generateContent?key=${key}`;
+        options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] }),
           signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok || res.status === 400;
-      } 
-      else if (type === 'groq') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(GROQ_BASE, {
+        };
+      } else if (apiName.includes('Groq')) {
+        url = GROQ_BASE;
+        options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
           body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
           signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok;
-      }
-      else if (type === 'claude') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(CLAUDE_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-          body: JSON.stringify({ model: 'claude-3-haiku-20240307', messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok;
-      }
-      else if (type === 'deepseek') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        };
+      } else if (apiName.includes('DeepSeek')) {
+        url = 'https://api.deepseek.com/v1/chat/completions';
+        options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
           body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
           signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        isActive = res.ok;
+        };
       }
       
-      if (isActive) {
-        badge.innerHTML = '<i class="fas fa-check-circle"></i> ACTIVE';
-        badge.style.background = '#e8f0e8';
-        badge.style.color = '#2d6a4f';
+      const res = await fetch(url, options);
+      clearTimeout(timeoutId);
+      
+      if (res.ok || res.status === 400 || res.status === 401) {
+        span.textContent = '🟢 ACTIVE';
+        span.style.background = '#e8f0e8';
+        span.style.color = '#2d6a4f';
       } else {
-        badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR';
-        badge.style.background = '#fee2e2';
-        badge.style.color = '#dc2626';
+        span.textContent = '🔴 ERROR';
+        span.style.background = '#fee2e2';
+        span.style.color = '#dc2626';
       }
     } catch(e) {
-      badge.innerHTML = '<i class="fas fa-times-circle"></i> OFFLINE';
-      badge.style.background = '#fef3c7';
-      badge.style.color = '#d97706';
+      span.textContent = '🔴 ERROR';
+      span.style.background = '#fee2e2';
+      span.style.color = '#dc2626';
     }
   }
-}
-
-function showApiKeyModal(provider, storageKey, defaultKey, type) {
-  // Hapus modal lama kalo ada
-  const existingModal = document.getElementById("api-key-edit-modal");
-  if (existingModal) existingModal.remove();
-  
-  const modalHtml = `
-  <div id="api-key-edit-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:20000; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
-    <div style="background:#ffffff; border-radius:28px; width:90%; max-width:420px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
-      
-      <div style="padding:20px 24px; background:#2d6a4f; display:flex; align-items:center; gap:12px;">
-        <i class="fas ${type === 'gemini' ? 'fa-star-of-life' : type === 'groq' ? 'fa-bolt' : type === 'claude' ? 'fa-feather-alt' : 'fa-database'}" style="color:white; font-size:22px;"></i>
-        <h3 style="margin:0; color:white; font-size:18px; font-weight:600;">Edit ${provider}</h3>
-      </div>
-      
-      <div style="padding:24px;">
-        <label style="display:block; font-size:12px; color:#6b6b6b; margin-bottom:6px;">
-          <i class="fas fa-key"></i> API Key
-        </label>
-        <input type="text" id="api-key-edit-input" class="settings-input" placeholder="Masukkan API Key..." value="${storageKey ? (localStorage.getItem(storageKey) || '') : (defaultKey || '')}" style="width:100%; margin-bottom:16px;">
-        
-        <div style="display:flex; gap:12px; margin-top:20px;">
-          <button id="api-key-save-btn" style="flex:1; background:#2d6a4f; border:none; border-radius:40px; padding:12px; color:white; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-            <i class="fas fa-save"></i> Simpan
-          </button>
-          <button id="api-key-reset-btn" style="flex:1; background:#f0f0f0; border:1px solid #e5e5e5; border-radius:40px; padding:12px; color:#1a1a1a; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-            <i class="fas fa-undo-alt"></i> Reset ke Default
-          </button>
-        </div>
-        
-        <button id="api-key-cancel-btn" style="width:100%; background:none; border:none; color:#9ca3af; margin-top:16px; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <i class="fas fa-times"></i> Batal
-        </button>
-      </div>
-    </div>
-  </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-  
-  const input = document.getElementById("api-key-edit-input");
-  const saveBtn = document.getElementById("api-key-save-btn");
-  const resetBtn = document.getElementById("api-key-reset-btn");
-  const cancelBtn = document.getElementById("api-key-cancel-btn");
-  
-  saveBtn.onclick = () => {
-    const newKey = input.value.trim();
-    if (storageKey) {
-      if (newKey) localStorage.setItem(storageKey, newKey);
-      else localStorage.removeItem(storageKey);
-    }
-    // Untuk default key (tidak bisa diubah, hanya reset)
-    showToast(`✅ ${provider} API Key telah diperbarui!`, false);
-    document.getElementById("api-key-edit-modal").remove();
-    loadApiKeysBoard(); // Refresh tabel
-  };
-  
-  resetBtn.onclick = () => {
-    if (defaultKey) {
-      if (storageKey) localStorage.setItem(storageKey, defaultKey);
-      input.value = defaultKey;
-      showToast(`🔄 ${provider} direset ke default`, false);
-    } else {
-      showToast(`⚠️ ${provider} tidak memiliki default key`, true);
-    }
-  };
-  
-  cancelBtn.onclick = () => {
-    document.getElementById("api-key-edit-modal").remove();
-  };
 }
 
 // ========== FIX 4: TOTAL CHAT NAMBAH 1 (BUKAN 2) ==========
@@ -9037,42 +6427,5 @@ document.addEventListener('DOMContentLoaded', function() {
     voiceCloseGoodEvil.onclick = function() {
       closeGoodEvilModal();
     };
-  }
-});
-
-// Register Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(function(registration) {
-    console.log('✅ Service Worker registered successfully:', registration);
-    
-    // Cek apakah ada SW yang nunggu aktivasi
-    if (registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-    
-    // Kirim test message
-    setTimeout(() => {
-      registration.active?.postMessage({
-        type: 'SHOW_NOTIFICATION',
-        title: '🔥 HIROKO AI Ready!',
-        body: 'Service Worker aktif, notifikasi siap dikirim!',
-        icon: 'https://files.catbox.moe/defcsh.jpg'
-      });
-    }, 2000);
-    
-  }).catch(function(error) {
-    console.log('❌ Service Worker registration failed:', error);
-  });
-}
-
-// Handle message dari Service Worker
-navigator.serviceWorker.addEventListener('message', function(event) {
-  console.log('Message from SW:', event.data);
-  if (event.data && event.data.type === 'FOCUS_INPUT') {
-    const msgInput = document.getElementById('msg-input');
-    if (msgInput) {
-      msgInput.focus();
-      showToast('💬 Klik notifikasi lagi untuk reply!', false);
-    }
   }
 });

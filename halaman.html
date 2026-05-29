@@ -5,15 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/jpeg" href="https://files.catbox.moe/defcsh.jpg">
 <link rel="shortcut icon" type="image/jpeg" href="https://files.catbox.moe/defcsh.jpg">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2d6a4f">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="HIROKO AI">
-<link rel="apple-touch-icon" href="https://files.catbox.moe/defcsh.jpg">
 <title>HIROKO — AI by KawakiModss</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <meta name="theme-color" content="#00A8FF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -249,8 +242,9 @@
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <div class="plan-badge" id="plan-badge" style="display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:12px; margin:12px 16px 4px;">
-     <span id="plan-label" style="font-weight:600; font-size:12px;"></span>
+  <div class="plan-badge free" id="plan-badge">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="plan-label">Free Plan</span>
   </div>
 
   <button class="new-chat-btn" onclick="newChat()">
@@ -281,7 +275,8 @@
       ✦ &nbsp;Aktifkan Premium
     </button>
     <button id="settings-sidebar-btn" class="settings-toggle" style="margin-top: 8px; border-color: var(--blue); color: var(--blue);" onclick="openSettings()">
-        <i class="fas fa-sliders-h" style="margin-right: 8px;"></i> Pengaturan Akun
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      ⚙️ Pengaturan Akun
     </button>
   </div>
 </div>
@@ -443,7 +438,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
       </div>
       <div class="mode-info">
-        <div class="mode-name">Hiroko Normal <span class="mode-badge free">GRATIS</span></div>
+        <div class="mode-name">Normal <span class="mode-badge free">GRATIS</span></div>
         <div class="mode-desc">AI serba bisa</div>
       </div>
       <div class="mode-check">
@@ -456,7 +451,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       </div>
       <div class="mode-info">
-        <div class="mode-name">Hiroko Haiku 4.5 <span class="mode-badge free">GRATIS</span></div>
+        <div class="mode-name">Fast <span class="mode-badge free">GRATIS</span></div>
         <div class="mode-desc">Respons kilat</div>
       </div>
       <div class="mode-check">
@@ -469,7 +464,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
       </div>
       <div class="mode-info">
-        <div class="mode-name">Hiroko sonnet 4.6 <span class="mode-badge premium">PREMIUM</span></div>
+        <div class="mode-name">Code <span class="mode-badge premium">PREMIUM</span></div>
         <div class="mode-desc">Expert coding</div>
       </div>
       <div class="mode-check">
@@ -482,7 +477,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
       </div>
       <div class="mode-info">
-        <div class="mode-name">Hiroko Opus 4.7 <span class="mode-badge premium">PREMIUM</span></div>
+        <div class="mode-name">Math <span class="mode-badge premium">PREMIUM</span></div>
         <div class="mode-desc">Matematika genius</div>
       </div>
       <div class="mode-check">
