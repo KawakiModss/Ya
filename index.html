@@ -1,117 +1,133 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/jpeg" href="https://files.catbox.moe/i98zyd.jpg">
-<link rel="shortcut icon" type="image/jpeg" href="https://files.catbox.moe/i98zyd.jpg">
-<meta name="theme-color" content="#FACC15">
-<title>Hiroko - Website Official</title>
-<meta name="description" content="Pusat website terbaik kawaki.">
-<meta name="keywords" content="Thanks To All">
-<meta keyword= "kawaki Official,   Hiroko Web">
-<meta name="author" content="Kawaki">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://www.everfallnet.my.id/">
-<meta property="og:title" content="Hiroko - Website Official">
-<meta property="og:description" content="Website Official Kawaki">
-<meta property="og:image" content="https://files.catbox.moe/i98zyd.jpg">
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:title" content="Hiroko - Website Official">
-<meta property="twitter:description" content="Website Official Kawaki">
-<meta property="twitter:image" content="https://files.catbox.moe/i98zyd.jpg">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FACC15">
+    
+    <!-- FAVICON (Diperbaiki) -->
+    <link rel="icon" type="image/jpeg" href="https://files.catbox.moe/i98zyd.jpg">
+    <link rel="shortcut icon" type="image/jpeg" href="https://files.catbox.moe/i98zyd.jpg">
+    <link rel="apple-touch-icon" href="https://files.catbox.moe/i98zyd.jpg">
+    
+    <title>Hiroko - Website Official</title>
+    <meta name="description" content="Pusat website resmi Hiroko. Informasi lengkap, update terbaru, dan layanan terbaik dari Kawaki Official.">
+    <meta name="keywords" content="hiroko, hiroko official, kawaki, kawaki official, website hiroko, everfallnet">
+    <meta name="author" content="Kawaki">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="https://www.everfallnet.my.id/">
 
-body {
-    background-color: #0f0f0f;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    font-family: 'Poppins', sans-serif;
-}
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.everfallnet.my.id/">
+    <meta property="og:title" content="Hiroko - Website Official">
+    <meta property="og:description" content="Pusat website resmi Hiroko. Informasi lengkap dan update terbaru.">
+    <meta property="og:image" content="https://files.catbox.moe/i98zyd.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
-.loading-container {
-    position: relative;
-    width: 250px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Hiroko - Website Official 👑">
+    <meta property="twitter:description" content="Pusat website resmi Hiroko.">
+    <meta property="twitter:image" content="https://files.catbox.moe/i98zyd.jpg">
 
-.logo-wrapper {
-    position: relative;
-    display: block;
-    overflow: hidden;
-    border-radius: 10px;
-    width: 150px;
-}
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
 
-.logo-img {
-    width: 100%;
-    height: auto;
-    display: block;
-    object-fit: contain;
-}
+        body {
+            background-color: #0f0f0f;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
 
-.logo-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        to right,
-        rgba(255,255,255,0) 0%,
-        rgba(255,255,255,0.8) 50%,
-        rgba(255,255,255,0) 100%
-    );
-    transform: skewX(-25deg);
-    animation: loading-shimmer 1.5s infinite;
-}
+        .loading-container {
+            position: relative;
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-@keyframes loading-shimmer {
-    0% { left: -150%; }
-    100% { left: 150%; }
-}
+        .logo-wrapper {
+            position: relative;
+            display: block;
+            overflow: hidden;
+            border-radius: 10px;
+            width: 150px;
+        }
 
-.loading-text {
-    color: #666;
-    margin-top: 15px;
-    text-align: center;
-    font-size: 10px;
-    letter-spacing: 2px;
-    animation: pulse 1.5s infinite;
-}
+        .logo-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
 
-@keyframes pulse {
-    0% { opacity: 0.5; }
-    50% { opacity: 1; }
-    100% { opacity: 0.5; }
-}
-</style>
+        .logo-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.8) 50%,
+                rgba(255,255,255,0) 100%
+            );
+            transform: skewX(-25deg);
+            animation: loading-shimmer 1.5s infinite;
+        }
+
+        @keyframes loading-shimmer {
+            0% { left: -150%; }
+            100% { left: 150%; }
+        }
+
+        .loading-text {
+            color: #666;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 2px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+    </style>
 </head>
 <body>
-<div class="loading-container">
-    <div class="logo-wrapper">
-        <img src="https://files.catbox.moe/defcsh.jpg" alt="Logo" class="logo-img">
+    <div class="loading-container">
+        <div class="logo-wrapper">
+            <img src="https://files.catbox.moe/defcsh.jpg" alt="Hiroko Logo" class="logo-img">
+        </div>
+        <div class="loading-text">
+            TUNGGU SEBENTAR YA,<br>LAGI LOADING...
+        </div>
     </div>
-    <div class="loading-text">
-        TUNGGU SEBENTAR YA,<br>LAGI LOADING...
-    </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        // Redirect ke Msisgshs37281JdjdbMmsisnsksjshskjssisiis93939299.html (biarkan seperti ini atau hapus)
-        window.location.href = 'Msisgshs37281JdjdbMmsisnsksjshskjssisiis93939299.html';
-    }, 5000);
-});
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                window.location.href = 'Msisgshs37281JdjdbMmsisnsksjshskjssisiis93939299.html';
+            }, 5000);
+        });
+    </script>
 </body>
 </html>
