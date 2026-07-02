@@ -1,3 +1,68 @@
+// ============================================================
+// 1. BACKGROUND ANIMATION (CANVAS)
+// ============================================================
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dots = [];
+
+function resizeCanvas() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Dot {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.r = Math.random() * 2 + 1;
+    this.dx = (Math.random() - 0.5) * 0.4;
+    this.dy = (Math.random() - 0.5) * 0.4;
+    this.color = `hsla(${Math.random()*60 + 160}, 70%, 60%, ${Math.random()*0.3+0.1})`;
+  }
+  update() {
+    this.x += this.dx;
+    this.y += this.dy;
+    if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 120; i++) dots.push(new Dot());
+
+function drawBg() {
+  ctx.clearRect(0, 0, W, H);
+  dots.forEach(d => { d.update(); d.draw(); });
+  // draw lines
+  for (let i = 0; i < dots.length; i++) {
+    for (let j = i + 1; j < dots.length; j++) {
+      const dx = dots[i].x - dots[j].x;
+      const dy = dots[i].y - dots[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 150) {
+        ctx.beginPath();
+        ctx.moveTo(dots[i].x, dots[i].y);
+        ctx.lineTo(dots[j].x, dots[j].y);
+        ctx.strokeStyle = `rgba(0,245,196,${0.06 * (1 - dist/150)})`;
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ============================================================
+// 2. SOAL + ICON (SEMUA PAKE FONT AWESOME)
+// ============================================================
 const baseQuestions = [
   // LOGIKA (1-4)
   { cat: "Logika", icon: "fa-solid fa-sitemap", q: "Jika semua kucing adalah hewan, dan beberapa hewan adalah mamalia, manakah kesimpulan yang PASTI benar?", opts: ["Semua kucing adalah mamalia","Beberapa kucing mungkin mamalia","Tidak ada kucing yang mamalia","Semua mamalia adalah kucing"], ans: 1 },
@@ -17,24 +82,24 @@ const baseQuestions = [
   { cat: "Matematika", icon: "fa-solid fa-calculator", q: "Berapakah nilai x jika 3x + 12 = 33?", opts: ["5","6","7","8"], ans: 2 },
   { cat: "Matematika", icon: "fa-solid fa-calculator", q: "Dua angka memiliki selisih 14 dan jumlah 64. Angka yang lebih kecil adalah?", opts: ["23","25","27","29"], ans: 1 },
 
-  // POLA VISUAL (13-15)
-  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Jika MERAH → HIJAU → BIRU mengikuti pola pergantian warna primer, warna apa yang mengikuti setelah BIRU jika pola berulang?", opts: ["Kuning","Merah","Ungu","Oranye"], ans: 1 },
-  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Cermin sebuah huruf 'R' secara horizontal akan terlihat seperti huruf apa?", opts: ["R terbalik","Huruf yang tidak standar","Tetap R","Huruf K"], ans: 1 },
-  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Sebuah kubus memiliki 6 sisi. Jika setiap sisi dibagi menjadi 4 bagian, ada berapa bagian total?", opts: ["18","20","22","24"], ans: 3 },
+  // POLA VISUAL (13-15) + ICON
+  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Perhatikan pola warna: <i class='fas fa-circle' style='color:#ff6b6b'></i> → <i class='fas fa-circle' style='color:#00f5c4'></i> → <i class='fas fa-circle' style='color:#7c6aff'></i>. Jika pola berulang, warna setelah biru adalah?", opts: ["Kuning","Merah","Ungu","Oranye"], ans: 1, icons: ['fa-solid fa-circle','fa-solid fa-circle','fa-solid fa-circle'] },
+  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Cermin huruf 'R' secara horizontal akan terlihat seperti?", opts: ["R terbalik","Huruf tidak standar","Tetap R","Huruf K"], ans: 1 },
+  { cat: "Pola Visual", icon: "fa-solid fa-eye", q: "Sebuah kubus memiliki 6 sisi. Jika setiap sisi dibagi menjadi 4 bagian, total bagiannya?", opts: ["18","20","22","24"], ans: 3 },
 
   // BAHASA & VERBAL (16-20)
   { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Kata mana yang paling BERBEDA dari kelompoknya?", opts: ["Mawar","Melati","Anggrek","Mangga"], ans: 3 },
   { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Analogi: Buku : Perpustakaan = Lukisan : ?", opts: ["Kanvas","Museum","Seniman","Galeri"], ans: 3 },
-  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Manakah kata yang merupakan lawan kata dari 'Kontradiksi'?", opts: ["Persetujuan","Perbedaan","Konflik","Perdebatan"], ans: 0 },
-  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Jika 'Cepat' adalah antonim dari 'Lambat', maka antonim dari 'Boros' adalah?", opts: ["Hemat","Kaya","Pelit","Miskin"], ans: 0 },
-  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Lengkapi analogi: Dokter : Rumah Sakit = Hakim : ?", opts: ["Penjara","Pengadilan","Kantor Polisi","Kejaksaan"], ans: 1 },
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Lawan kata dari 'Kontradiksi' adalah?", opts: ["Persetujuan","Perbedaan","Konflik","Perdebatan"], ans: 0 },
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Antonim dari 'Boros' adalah?", opts: ["Hemat","Kaya","Pelit","Miskin"], ans: 0 },
+  { cat: "Verbal", icon: "fa-solid fa-spell-check", q: "Dokter : Rumah Sakit = Hakim : ?", opts: ["Penjara","Pengadilan","Kantor Polisi","Kejaksaan"], ans: 1 },
 
   // BAHASA INDONESIA (21-25)
   { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Kata 'sangat' dalam bahasa Indonesia termasuk jenis kata?", opts: ["Nomina","Verba","Adjektiva","Adverbia"], ans: 3 },
-  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Manakah kalimat yang menggunakan ejaan yang tepat?", opts: ["Saya pergi ke pasar jam 2 sore","Saya pergi ke Pasar jam 2 sore","Saya pergi ke Pasar jam 2 Sore","saya pergi ke Pasar jam 2 sore"], ans: 0 },
-  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Apa imbuhan yang tepat untuk kata 'dasar' menjadi 'mempunyai dasar'?", opts: ["ber-","me-","di-","ke-"], ans: 0 },
-  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Sinonim dari kata 'kompleks' adalah?", opts: ["Sederhana","Rumit","Mudah","Lurus"], ans: 1 },
-  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Kalimat pasif dari 'Ayah membeli mobil baru' adalah?", opts: ["Mobil baru dibeli ayah","Ayah membelikan mobil baru","Mobil baru membeli ayah","Dibeli ayah mobil baru"], ans: 0 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Kalimat dengan ejaan yang tepat?", opts: ["Saya pergi ke pasar jam 2 sore","Saya pergi ke Pasar jam 2 sore","Saya pergi ke Pasar jam 2 Sore","saya pergi ke Pasar jam 2 sore"], ans: 0 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Imbuhan tepat untuk 'dasar' → 'mempunyai dasar'?", opts: ["ber-","me-","di-","ke-"], ans: 0 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Sinonim dari 'kompleks' adalah?", opts: ["Sederhana","Rumit","Mudah","Lurus"], ans: 1 },
+  { cat: "Bahasa Indo", icon: "fa-solid fa-language", q: "Kalimat pasif dari 'Ayah membeli mobil baru'?", opts: ["Mobil baru dibeli ayah","Ayah membelikan mobil baru","Mobil baru membeli ayah","Dibeli ayah mobil baru"], ans: 0 },
 
   // BAHASA INGGRIS (26-30)
   { cat: "English", icon: "fa-solid fa-flag-usa", q: "Which sentence is grammatically correct?", opts: ["She go to school yesterday","She went to school yesterday","She goes to school yesterday","She gone to school yesterday"], ans: 1 },
@@ -53,7 +118,7 @@ const baseQuestions = [
   { cat: "العربية", icon: "fa-solid fa-mosque", q: "Kata 'بسم الله' (Bismillah) artinya?", opts: ["Dengan nama Allah","Maha Suci Allah","Allah Maha Besar","Segala puji bagi Allah"], ans: 0 },
   { cat: "العربية", icon: "fa-solid fa-mosque", q: "Angka 5 dalam bahasa Arab adalah?", opts: ["واحد (Wahid)","اثنان (Itsnan)","ثلاثة (Tsalatsah)","خمسة (Khamsah)"], ans: 3 },
 
-  // ASTRONOMI (37-40)
+  // ASTRONOMI (37-40) + ICON
   { cat: "Astronomi", icon: "fa-solid fa-meteor", q: "Planet terbesar di tata surya kita adalah?", opts: ["Jupiter","Saturnus","Mars","Bumi"], ans: 0 },
   { cat: "Astronomi", icon: "fa-solid fa-meteor", q: "Benda langit yang mengelilingi planet disebut?", opts: ["Bintang","Komet","Satelit","Asteroid"], ans: 2 },
   { cat: "Astronomi", icon: "fa-solid fa-meteor", q: "Galaksi tempat Bumi berada bernama?", opts: ["Andromeda","Bimasakti","Triangulum","Sombrero"], ans: 1 },
@@ -69,7 +134,7 @@ const baseQuestions = [
   { cat: "Geografi", icon: "fa-solid fa-globe-asia", q: "Benua terluas di dunia adalah?", opts: ["Afrika","Amerika","Asia","Antartika"], ans: 2 },
   { cat: "Geografi", icon: "fa-solid fa-globe-asia", q: "Samudra terbesar di Bumi adalah?", opts: ["Atlantik","Hindia","Arktik","Pasifik"], ans: 3 },
 
-  // KIMIA (47-48)
+  // KIMIA (47-48) + ICON
   { cat: "Kimia", icon: "fa-solid fa-flask", q: "Lambang kimia untuk Air adalah?", opts: ["O2","CO2","H2O","NaCl"], ans: 2 },
   { cat: "Kimia", icon: "fa-solid fa-flask", q: "Unsur dengan nomor atom 6 adalah?", opts: ["Oksigen","Karbon","Hidrogen","Nitrogen"], ans: 1 },
 
@@ -78,7 +143,141 @@ const baseQuestions = [
   { cat: "Biologi", icon: "fa-solid fa-dna", q: "Proses fotosintesis menghasilkan?", opts: ["Karbon dioksida","Oksigen","Nitrogen","Hidrogen"], ans: 1 }
 ];
 
-// ========== FITUR RANDOM SHUFFLE ==========
+// SOAL GAMBAR + ICON (10 soal dengan base64 image + icon display)
+const imageQuestions = [
+  // Pola Visual - Icon
+  { 
+    cat: "Pola Visual", 
+    icon: "fa-solid fa-eye", 
+    q: "Perhatikan pola icon berikut:", 
+    opts: ["<i class='fas fa-square' style='color:#00f5c4'></i>","<i class='fas fa-circle' style='color:#7c6aff'></i>","<i class='fas fa-square' style='color:#ff6b6b'></i>","<i class='fas fa-triangle' style='color:#f0a500'></i>"], 
+    ans: 0,
+    displayIcons: [
+      '<i class="fas fa-square" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-circle" style="color:#7c6aff;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-circle" style="color:#7c6aff;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-question" style="color:#ff6b6b;font-size:24px;"></i>'
+    ]
+  },
+  { 
+    cat: "Pola Visual", 
+    icon: "fa-solid fa-eye", 
+    q: "Icon mana yang berbeda?", 
+    opts: ["<i class='fas fa-sun' style='color:#f0a500'></i>","<i class='fas fa-moon' style='color:#7c6aff'></i>","<i class='fas fa-star' style='color:#f0a500'></i>","<i class='fas fa-fire' style='color:#ff6b6b'></i>"], 
+    ans: 3,
+    displayIcons: [
+      '<i class="fas fa-sun" style="color:#f0a500;font-size:24px;"></i>',
+      '<i class="fas fa-moon" style="color:#7c6aff;font-size:24px;"></i>',
+      '<i class="fas fa-star" style="color:#f0a500;font-size:24px;"></i>',
+      '<i class="fas fa-fire" style="color:#ff6b6b;font-size:24px;"></i>'
+    ]
+  },
+  { 
+    cat: "Pola Visual", 
+    icon: "fa-solid fa-eye", 
+    q: "Lanjutkan pola icon:", 
+    opts: ["<i class='fas fa-circle' style='color:#00f5c4'></i>","<i class='fas fa-square' style='color:#7c6aff'></i>","<i class='fas fa-circle' style='color:#ff6b6b'></i>","<i class='fas fa-square' style='color:#f0a500'></i>"], 
+    ans: 0,
+    displayIcons: [
+      '<i class="fas fa-circle" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#ff6b6b;font-size:24px;"></i>',
+      '<i class="fas fa-circle" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#ff6b6b;font-size:24px;"></i>',
+      '<i class="fas fa-circle" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#ff6b6b;font-size:24px;"></i>',
+      '<i class="fas fa-circle" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-square" style="color:#ff6b6b;font-size:24px;"></i>',
+      '<i class="fas fa-question" style="color:#ff6b6b;font-size:24px;"></i>'
+    ]
+  },
+  
+  // Astronomi - Icon
+  { 
+    cat: "Astronomi", 
+    icon: "fa-solid fa-meteor", 
+    q: "Planet mana yang memiliki cincin?", 
+    opts: ["Jupiter","Saturnus","Mars","Venus"], 
+    ans: 1,
+    img: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='60'%3E%3Ccircle cx='40' cy='30' r='20' fill='%23f0a500'/%3E%3Cellipse cx='40' cy='30' rx='35' ry='8' fill='none' stroke='%2300f5c4' stroke-width='3'/%3E%3Ctext x='80' y='38' font-size='20' fill='%235a6080'%3EPlanet?%3C/text%3E%3C/svg%3E" 
+  },
+  { 
+    cat: "Astronomi", 
+    icon: "fa-solid fa-meteor", 
+    q: "Benda langit ini adalah?", 
+    opts: ["Komet","Bintang","Planet","Asteroid"], 
+    ans: 0,
+    img: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='60'%3E%3Ccircle cx='30' cy='30' r='5' fill='%23fff'/%3E%3Cpath d='M35,30 L90,25 L100,30 L90,35 Z' fill='%2300f5c4' opacity='0.7'/%3E%3Ctext x='110' y='38' font-size='20' fill='%235a6080'%3EObjek?%3C/text%3E%3C/svg%3E" 
+  },
+
+  // Matematika - Gambar
+  { 
+    cat: "Matematika", 
+    icon: "fa-solid fa-calculator", 
+    q: "Berapa luas persegi dengan sisi 7 cm?", 
+    opts: ["14 cm²","28 cm²","49 cm²","56 cm²"], 
+    ans: 2,
+    img: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='80'%3E%3Crect x='20' y='20' width='60' height='60' fill='none' stroke='%2300f5c4' stroke-width='3'/%3E%3Ctext x='35' y='55' font-size='20' fill='%235a6080'%3E7 cm%3C/text%3E%3C/svg%3E" 
+  },
+  
+  // Kimia - Gambar
+  { 
+    cat: "Kimia", 
+    icon: "fa-solid fa-flask", 
+    q: "Struktur molekul air adalah?", 
+    opts: ["Linear","Bentuk V","Segitiga","Tetrahedral"], 
+    ans: 1,
+    img: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='80'%3E%3Ccircle cx='60' cy='40' r='15' fill='%23ff6b6b' opacity='0.6'/%3E%3Ccircle cx='100' cy='20' r='10' fill='%2300f5c4' opacity='0.6'/%3E%3Ccircle cx='100' cy='60' r='10' fill='%2300f5c4' opacity='0.6'/%3E%3Cline x1='65' y1='35' x2='95' y2='25' stroke='%235a6080' stroke-width='2'/%3E%3Cline x1='65' y1='45' x2='95' y2='55' stroke='%235a6080' stroke-width='2'/%3E%3C/svg%3E" 
+  },
+
+  // Biologi - Gambar
+  { 
+    cat: "Biologi", 
+    icon: "fa-solid fa-dna", 
+    q: "Organ ini berfungsi untuk?", 
+    opts: ["Memompa darah","Mencerna makanan","Bernapas","Menyaring darah"], 
+    ans: 0,
+    img: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='80'%3E%3Cpath d='M50,40 Q70,20 90,40 Q110,60 130,40 Q150,20 170,40' fill='none' stroke='%23ff6b6b' stroke-width='8'/%3E%3C/svg%3E" 
+  },
+
+  // Logika - Gambar
+  { 
+    cat: "Logika", 
+    icon: "fa-solid fa-sitemap", 
+    q: "Berapa segitiga pada gambar ini?", 
+    opts: ["4","6","8","10"], 
+    ans: 2,
+    img: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='80'%3E%3Cpolygon points='100,10 40,70 160,70' fill='none' stroke='%2300f5c4' stroke-width='3'/%3E%3Cpolygon points='100,25 55,70 145,70' fill='none' stroke='%237c6aff' stroke-width='2'/%3E%3C/svg%3E" 
+  },
+  
+  // Icon Pattern - tambahan
+  { 
+    cat: "Pola Visual", 
+    icon: "fa-solid fa-eye", 
+    q: "Icon manakah yang cocok untuk melengkapi pola?", 
+    opts: ["<i class='fas fa-arrow-up' style='color:#00f5c4'></i>","<i class='fas fa-arrow-down' style='color:#7c6aff'></i>","<i class='fas fa-arrow-left' style='color:#ff6b6b'></i>","<i class='fas fa-arrow-right' style='color:#f0a500'></i>"], 
+    ans: 0,
+    displayIcons: [
+      '<i class="fas fa-arrow-up" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-arrow-down" style="color:#7c6aff;font-size:24px;"></i>',
+      '<i class="fas fa-arrow-up" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-arrow-down" style="color:#7c6aff;font-size:24px;"></i>',
+      '<i class="fas fa-arrow-up" style="color:#00f5c4;font-size:24px;"></i>',
+      '<i class="fas fa-question" style="color:#ff6b6b;font-size:24px;"></i>'
+    ]
+  }
+];
+
+// Gabungkan semua soal
+const allQuestions = [...baseQuestions, ...imageQuestions];
+
+// ============================================================
+// 3. FUNGSI UTAMA
+// ============================================================
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -88,24 +287,19 @@ function shuffleArray(arr) {
 }
 
 function shuffleOptions(question) {
-  // buat array index [0,1,2,3] lalu acak
   const indices = [0, 1, 2, 3];
   shuffleArray(indices);
   const newOpts = indices.map(i => question.opts[i]);
-  // cari index baru dari jawaban benar
   let newAns = indices.findIndex(i => i === question.ans);
-  return {
-    ...question,
-    opts: newOpts,
-    ans: newAns
-  };
+  return { ...question, opts: newOpts, ans: newAns };
 }
 
-let questions = []; // bakal diisi random setiap start
-
+let questions = [];
 let userName = '';
 let currentQ = 0;
 let score = 0;
+let wrong = 0;
+let unanswered = 0;
 let timerInterval;
 let timeLeft = 30;
 let answered = false;
@@ -124,7 +318,7 @@ function startTest() {
   if (!input) {
     const inp = document.getElementById('name-input');
     inp.style.borderColor = 'var(--accent3)';
-    inp.style.boxShadow = '0 0 0 4px rgba(255,107,107,0.15)';
+    inp.style.boxShadow = '0 0 0 6px rgba(255,107,107,0.15)';
     inp.placeholder = 'Nama tidak boleh kosong!';
     setTimeout(() => {
       inp.style.borderColor = '';
@@ -135,17 +329,16 @@ function startTest() {
   }
   userName = input;
   
-  // --- RANDOMIZE TOTAL ---
-  // 1. Copy base questions
-  let shuffledBase = [...baseQuestions];
-  // 2. Acak urutan soal
-  shuffledBase = shuffleArray(shuffledBase);
-  // 3. Untuk setiap soal, acak opsi jawaban
-  questions = shuffledBase.map(q => shuffleOptions(q));
+  // SHUFFLE TOTAL SETIAP START
+  let shuffledBase = shuffleArray([...allQuestions]);
+  questions = shuffledBase.slice(0, 50).map(q => shuffleOptions(q));
   
   currentQ = 0;
   score = 0;
+  wrong = 0;
+  unanswered = 0;
   userAnswers = [];
+  
   showScreen('quiz');
   document.getElementById('display-name').textContent = userName;
   loadQuestion();
@@ -163,6 +356,24 @@ function loadQuestion() {
   document.getElementById('q-category').querySelector('i').className = q.icon;
   document.getElementById('question-text').textContent = q.q;
   document.getElementById('btn-next').classList.remove('visible');
+
+  // Display Icons (jika ada)
+  const iconDisplay = document.getElementById('question-icon-display');
+  if (q.displayIcons) {
+    iconDisplay.innerHTML = q.displayIcons.join(' ');
+    iconDisplay.style.display = 'flex';
+  } else {
+    iconDisplay.style.display = 'none';
+  }
+
+  // Gambar
+  const imgEl = document.getElementById('question-image');
+  if (q.img) {
+    imgEl.src = q.img;
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.style.display = 'none';
+  }
 
   const timer = document.getElementById('timer-display');
   timer.textContent = '30';
@@ -204,8 +415,8 @@ function selectAnswer(index, btn) {
 
   if (index === q.ans) {
     score++;
-    btn.classList.remove('selected');
   } else {
+    wrong++;
     btn.classList.add('wrong');
   }
 
@@ -216,6 +427,7 @@ function selectAnswer(index, btn) {
 function autoSkip() {
   if (answered) return;
   answered = true;
+  unanswered++;
   const q = questions[currentQ];
   const allBtns = document.querySelectorAll('.option-btn');
   allBtns.forEach(b => b.disabled = true);
@@ -237,14 +449,15 @@ function showResult() {
   clearInterval(timerInterval);
   showScreen('result');
 
-  const pct = score / 50;
+  const totalAttempted = score + wrong;
+  const pct = totalAttempted > 0 ? score / totalAttempted : 0;
   const iq = Math.round(70 + pct * 75);
-  const wrong = 50 - score;
-  const accPct = Math.round((score / 50) * 100);
+  const accPct = totalAttempted > 0 ? Math.round((score / totalAttempted) * 100) : 0;
 
   document.getElementById('result-name').textContent = userName;
   document.getElementById('stat-correct').textContent = score;
   document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('stat-unanswered').textContent = unanswered;
   document.getElementById('stat-pct').textContent = accPct + '%';
 
   let cat, color, desc;
@@ -300,21 +513,19 @@ function showResult() {
   }, 600);
 
   if (score >= 35) triggerConfetti();
-
-  spawnParticles();
 }
 
 function triggerConfetti() {
   const wrap = document.getElementById('confettiWrap');
   wrap.innerHTML = '';
   const colors = ['#00f5c4','#7c6aff','#ff6b6b','#f0a500','#fff','#38bdf8'];
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 100; i++) {
     const p = document.createElement('div');
     p.className = 'confetti-piece';
     const left = Math.random() * 100;
     const delay = Math.random() * 1.5;
-    const dur = 2 + Math.random() * 2;
-    const size = 6 + Math.random() * 8;
+    const dur = 2 + Math.random() * 2.5;
+    const size = 6 + Math.random() * 10;
     p.style.cssText = `
       left:${left}vw; top:0;
       width:${size}px; height:${size}px;
@@ -322,44 +533,22 @@ function triggerConfetti() {
       animation-duration:${dur}s;
       animation-delay:${delay}s;
       border-radius:${Math.random()>0.5 ? '50%' : '3px'};
+      transform: rotate(${Math.random()*360}deg);
     `;
     wrap.appendChild(p);
   }
-  setTimeout(() => { wrap.innerHTML = ''; }, 5000);
-}
-
-function spawnParticles() {
-  const bg = document.getElementById('particleBg');
-  bg.innerHTML = '';
-  const colors = ['#00f5c4','#7c6aff','#ff6b6b'];
-  for (let i = 0; i < 15; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    const size = 4 + Math.random() * 8;
-    const left = Math.random() * 100;
-    const dur = 6 + Math.random() * 8;
-    const delay = Math.random() * 6;
-    p.style.cssText = `
-      width:${size}px; height:${size}px;
-      left:${left}%;
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      animation-duration:${dur}s;
-      animation-delay:${delay}s;
-    `;
-    bg.appendChild(p);
-  }
+  setTimeout(() => { wrap.innerHTML = ''; }, 6000);
 }
 
 function retryTest() {
-  document.getElementById('particleBg').innerHTML = '';
-  
-  // RANDOMIZE LAGI SAAT COBA LAGI
-  let shuffledBase = [...baseQuestions];
-  shuffledBase = shuffleArray(shuffledBase);
-  questions = shuffledBase.map(q => shuffleOptions(q));
+  // SHUFFLE LAGI
+  let shuffledBase = shuffleArray([...allQuestions]);
+  questions = shuffledBase.slice(0, 50).map(q => shuffleOptions(q));
   
   currentQ = 0;
   score = 0;
+  wrong = 0;
+  unanswered = 0;
   userAnswers = [];
   showScreen('quiz');
   document.getElementById('display-name').textContent = userName;
@@ -367,7 +556,6 @@ function retryTest() {
 }
 
 function goWelcome() {
-  document.getElementById('particleBg').innerHTML = '';
   clearInterval(timerInterval);
   showScreen('welcome');
 }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/jpeg" href="https://files.catbox.moe/1bdpm6.jpg">
 <link rel="shortcut icon" type="image/jpeg" href="https://files.catbox.moe/1bdpm6.jpg">
-<title>IQ Test — Cognitive Assessment (Randomized)</title>
+<title>IQ Tes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -14,9 +14,14 @@
 </head>
 <body>
 
+<!-- BACKGROUND CANVAS -->
+<div class="bg-canvas">
+  <canvas id="bg-canvas"></canvas>
+</div>
+
 <div class="orb orb1"></div>
 <div class="orb orb2"></div>
-<div class="particle-bg" id="particleBg"></div>
+<div class="orb orb3"></div>
 
 <div class="container">
 
@@ -24,32 +29,36 @@
   <div class="screen active" id="screen-welcome">
     <div class="logo">
       <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
-      <span class="logo-text">CogniQ</span>
+      <span class="logo-text">CogniQ Pro</span>
     </div>
 
     <div style="text-align:center; margin-bottom: 40px;">
       <div class="welcome-badge">
         <i class="fa-solid fa-flask"></i>
-        Tes Kecerdasan Standar
+        Tes Kecerdasan Dinamis
       </div>
-      <h1 class="welcome-title">Uji Batas<br>Kognitifmu</h1>
+      <h1 class="welcome-title">Ukur Potensi<br>Kognitif Maksimal</h1>
       <p class="welcome-desc">
-        50 soal terukur dari berbagai dimensi kecerdasan — logika, pola, angka, bahasa, astronomi, bahasa Jepang, Arab, dan lainnya. Temukan skor IQ aktualmu dalam sekali duduk.
+        50 soal adaptif dengan berbagai kategori — logika, pola, angka, bahasa, astronomi, dan visual. Setiap kali kamu buka, soal berubah!
       </p>
     </div>
 
     <div class="stats-row">
       <div class="stat-item">
         <span class="stat-num">50</span>
-        <span class="stat-label"><i class="fa-solid fa-list-check" style="margin-right:4px"></i>Soal</span>
+        <span class="stat-label"><i class="fa-solid fa-list-check"></i>Soal</span>
       </div>
       <div class="stat-item">
         <span class="stat-num">30s</span>
-        <span class="stat-label"><i class="fa-solid fa-clock" style="margin-right:4px"></i>Per soal</span>
+        <span class="stat-label"><i class="fa-solid fa-clock"></i>Per soal</span>
       </div>
       <div class="stat-item">
-        <span class="stat-num">12+</span>
-        <span class="stat-label"><i class="fa-solid fa-layer-group" style="margin-right:4px"></i>Kategori</span>
+        <span class="stat-num">15+</span>
+        <span class="stat-label"><i class="fa-solid fa-layer-group"></i>Kategori</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num"><i class="fa-solid fa-shuffle"></i></span>
+        <span class="stat-label"><i class="fa-solid fa-rotate"></i>Dinamis</span>
       </div>
     </div>
 
@@ -71,7 +80,7 @@
     <div class="quiz-header">
       <div class="quiz-meta">
         <div class="greeting-tag">
-          <i class="fa-solid fa-user" style="color:var(--accent2)"></i>
+          <i class="fa-solid fa-user"></i>
           Peserta: <span id="display-name"></span>
         </div>
         <div class="q-counter">
@@ -94,6 +103,8 @@
         <i class="fa-solid fa-shapes"></i>
         <span id="q-category-text">Logika</span>
       </div>
+      <div id="question-icon-display" class="question-icon-display" style="display:none;"></div>
+      <img id="question-image" class="question-image" style="display:none;" alt="Gambar soal">
       <p class="question-text" id="question-text">Pertanyaan muncul di sini</p>
     </div>
 
@@ -110,7 +121,7 @@
   <div class="screen" id="screen-result">
     <div class="logo">
       <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
-      <span class="logo-text">CogniQ</span>
+      <span class="logo-text">CogniQ Pro</span>
     </div>
 
     <div class="result-hero">
@@ -145,6 +156,11 @@
         <span class="result-stat-key">Salah</span>
       </div>
       <div class="result-stat">
+        <div class="result-stat-icon"><i class="fa-solid fa-clock"></i></div>
+        <span class="result-stat-val" id="stat-unanswered">0</span>
+        <span class="result-stat-key">Tidak Dijawab</span>
+      </div>
+      <div class="result-stat">
         <div class="result-stat-icon"><i class="fa-solid fa-percent"></i></div>
         <span class="result-stat-val" id="stat-pct">0%</span>
         <span class="result-stat-key">Akurasi</span>
@@ -165,9 +181,9 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" style="margin-bottom:12px" onclick="retryTest()">
+    <button class="btn btn-primary" style="margin-bottom:14px" onclick="retryTest()">
       <i class="fa-solid fa-rotate-right"></i>
-      Coba Lagi
+      Coba Lagi (Soal Baru!)
     </button>
     <button class="btn-retry" onclick="goWelcome()">
       <i class="fa-solid fa-house"></i>
@@ -178,6 +194,7 @@
 </div>
 
 <div class="confetti-wrap" id="confettiWrap"></div>
+
 
 
   <script src="t.js"></script>
